@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>It's Saturday! HTML 產生器</title>
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+<style>
+/* ═══════════════════════════════════════════
+   全域 / 品牌
+═══════════════════════════════════════════ */
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #f6f4f1; }
+.brand-logo { background: linear-gradient(135deg, #7a5c44 0%, #caa379 60%, #e8c9a0 100%); }
+.version-badge { font-size:10px; background:linear-gradient(90deg,#caa379,#e8c9a0); color:#5a3e28; padding:2px 8px; border-radius:20px; font-weight:600; letter-spacing:0.02em; }
+
+/* ═══════════════════════════════════════════
+   VS Code 語法高亮（核心，勿動）
+═══════════════════════════════════════════ */
+.hl-tag    { color:#569cd6 !important; }
+.hl-attr   { color:#9cdcfe !important; }
+.hl-val    { color:#ce9178 !important; }
+.hl-cmt    { color:#6a9955 !important; font-style:italic; }
+.hl-symbol { color:#808080 !important; }
+.hl-color  { color:#d7ba7d !important; }
+
+/* ═══════════════════════════════════════════
+   雙向聯動發光框 + 「正在編輯」標籤
+═══════════════════════════════════════════ */
+.preview-highlight {
+    outline:2.5px solid #caa379 !important;
+    outline-offset:5px;
+    background-color:#fffbf6 !important;
+    box-shadow:0 0 18px rgba(202,163,121,0.35) !important;
+    border-radius:6px;
+    position:relative !important;
+    transition:all 0.15s ease-in-out;
+}
+.preview-highlight::before {
+    content:'✏️ 正在編輯';
+    position:absolute; top:-22px; left:50%;
+    transform:translateX(-50%);
+    background:#caa379; color:#fff;
+    font-size:10px; font-weight:700;
+    font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    padding:2px 10px; border-radius:20px;
+    white-space:nowrap; pointer-events:none; z-index:10;
+    box-shadow:0 2px 8px rgba(180,130,80,0.3);
+    animation:badge-pop 0.15s ease-out;
+}
+@keyframes badge-pop {
+    from { opacity:0; transform:translateX(-50%) translateY(4px); }
+    to   { opacity:1; transform:translateX(-50%) translateY(0); }
+}
+
+/* ═══════════════════════════════════════════
+   共用元件
+═══════════════════════════════════════════ */
+.panel-card {
+    background:#fff; border:1px solid #e8e2d9; border-radius:14px;
+    box-shadow:0 2px 12px rgba(120,90,60,0.06),0 1px 2px rgba(120,90,60,0.04);
+}
+.row-card {
+    background:#faf8f5; border:1px solid #e8e2d9; border-radius:10px;
+    transition:border-color 0.15s,box-shadow 0.15s;
+}
+.row-card:focus-within { border-color:#caa379; box-shadow:0 0 0 3px rgba(202,163,121,0.12); }
+.field-focus:focus { outline:none !important; border-color:#caa379 !important; box-shadow:0 0 0 3px rgba(202,163,121,0.18); }
+.btn-brand { background:linear-gradient(135deg,#7a5c44,#926b59); color:white; border:none; transition:all 0.18s ease; cursor:pointer; }
+.btn-brand:hover { background:linear-gradient(135deg,#5e4433,#7a5c44); transform:translateY(-1px); box-shadow:0 4px 14px rgba(120,80,50,0.3); }
+.section-label { font-size:11px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color:#8c7b6b; }
+.row-num { min-width:20px; height:20px; background:#e8e2d9; color:#8c7b6b; border-radius:50%; font-size:10px; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+
+/* 拖曳 */
+.dragging { opacity:0.38; background-color:#fef9f0 !important; border:2px dashed #caa379 !important; }
+
+/* 滾動條 */
+#code-panel::-webkit-scrollbar { width:6px; }
+#code-panel::-webkit-scrollbar-track { background:#2a2a2a; }
+#code-panel::-webkit-scrollbar-thumb { background:#555; border-radius:3px; }
+#preview-scroll::-webkit-scrollbar { width:5px; }
+#preview-scroll::-webkit-scrollbar-track { background:#f0ece5; }
+#preview-scroll::-webkit-scrollbar-thumb { background:#caa379; border-radius:3px; }
+
+/* 預覽底紋 */
+.preview-bg { background-color:#fff; background-image:radial-gradient(#e0d8ce 1px,transparent 1px); background-size:18px 18px; }
+
+/* 複製成功動畫 */
+@keyframes pulse-ok { 0%{box-shadow:0 0 0 0 rgba(34,150,90,0.4)} 70%{box-shadow:0 0 0 8px rgba(34,150,90,0)} 100%{box-shadow:0 0 0 0 rgba(34,150,90,0)} }
+.anim-ok { animation:pulse-ok 0.6s ease-out; }
+
+/* 調色盤彈窗 */
+#color-popover { backdrop-filter:blur(8px); border:1px solid #e8e2d9; box-shadow:0 8px 30px rgba(80,50,30,0.15); }
+</style>
+</head>
+<body class="min-h-screen">
+
+<header class="bg-white border-b border-stone-200 sticky top-0 z-40" style="box-shadow:0 1px 8px rgba(100,70,40,0.07)">
+  <div class="max-w-[1400px] mx-auto px-6 py-3 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <img src="https://ik.imagekit.io/itssaturday/its-saturday-logo-300-100-1.png?updatedAt=1753622395304" alt="It's Saturday! Logo" class="h-8 object-contain">
+      <div>
+        <div class="flex items-center gap-2">
+          <h1 class="text-sm font-bold text-stone-800">It's Saturday! HTML 產生器</h1>
+          <span class="version-badge">2026.06月版本</span>
+        </div>
+      </div>
+    </div>
+    <div class="flex items-center gap-2 text-xs text-stone-400">
+      <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse inline-block"></span>
+      單一檔案 · 無伺服器
+    </div>
+  </div>
+</header>
+
+<div class="max-w-[1400px] mx-auto px-6 py-5">
+
+  <div class="panel-card mb-5 p-4">
+    <div class="flex items-center justify-between mb-2.5">
+      <div class="flex items-center gap-2">
+        <span class="text-stone-400">📥</span>
+        <span class="section-label">匯入舊有 HTML 進行修改</span>
+      </div>
+      <span class="text-[11px] font-medium text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
+        ⚠️ 目前不支援列點功能，若貼上會無法偵測
+      </span>
+    </div>
+    <div class="flex gap-3">
+      <textarea id="import-code"
+        class="flex-1 bg-stone-50 border border-stone-200 text-[11px] font-mono p-2.5 rounded-lg h-14 resize-none field-focus"
+        style="color:#555"
+        placeholder="貼上原本官網的 HTML 代碼，系統將自動解析並還原所有欄位…"></textarea>
+      <button onclick="importHTML()" class="btn-brand font-semibold text-xs px-5 rounded-lg shrink-0 whitespace-nowrap">
+        ⚡ 載入並自動優化
+      </button>
+    </div>
+  </div>
+
+  <div class="grid gap-5 items-start" style="grid-template-columns:360px 1fr 1fr">
+
+    <div class="panel-card p-5 flex flex-col gap-4">
+
+      <div class="p-3 rounded-xl" style="background:#fdf8f2;border:1px solid #ede0cc">
+        <p class="section-label mb-2">顯示組件</p>
+        <div class="flex gap-5 text-xs font-medium text-stone-600">
+          <label class="flex items-center gap-1.5 cursor-pointer select-none">
+            <input type="checkbox" id="toggle-bars" checked onchange="toggleSections()" class="accent-amber-700 w-3.5 h-3.5">
+            <span>📊 香氣組成比例</span>
+          </label>
+          <label class="flex items-center gap-1.5 cursor-pointer select-none">
+            <input type="checkbox" id="toggle-dots" checked onchange="toggleSections()" class="accent-amber-700 w-3.5 h-3.5">
+            <span>📍 特質圓點落點</span>
+          </label>
+        </div>
+      </div>
+
+      <div id="section-bars" onfocusin="hlPreview('bars')" onfocusout="unhlPreview('bars')">
+        <div class="flex justify-between items-center mb-2">
+          <p class="section-label">📊 香氣組成比例</p>
+          <span id="bar-total-badge" class="text-[10px] font-bold px-2 py-0.5 rounded-full transition-colors">加總 0%</span>
+        </div>
+        <div class="row-card p-3 flex flex-col gap-2">
+          <div class="flex items-center justify-between text-xs border-b border-stone-100 pb-1.5 mb-0.5">
+            <label class="flex items-center gap-2 cursor-pointer font-medium text-stone-700">
+              <input type="checkbox" id="chk-scent-1" checked onchange="onScentToggle(1)" class="accent-amber-700 w-3.5 h-3.5">
+              <span class="w-3 h-3 rounded-full inline-block" style="background:#675b53"></span><span>木質香</span>
+            </label>
+            <div class="flex items-center gap-1">
+              <input type="number" id="val-scent-1" value="60" oninput="validateAndRenderBars()" class="w-12 border border-stone-200 rounded-md p-1 text-center bg-white field-focus">
+              <span class="text-stone-400">%</span>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between text-xs border-b border-stone-100 pb-1.5">
+            <label class="flex items-center gap-2 cursor-pointer font-medium text-stone-700">
+              <input type="checkbox" id="chk-scent-2" checked onchange="onScentToggle(2)" class="accent-amber-700 w-3.5 h-3.5">
+              <span class="w-3 h-3 rounded-full inline-block" style="background:#c49281"></span><span>花香</span>
+            </label>
+            <div class="flex items-center gap-1">
+              <input type="number" id="val-scent-2" value="30" oninput="validateAndRenderBars()" class="w-12 border border-stone-200 rounded-md p-1 text-center bg-white field-focus">
+              <span class="text-stone-400">%</span>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between text-xs border-b border-stone-100 pb-1.5">
+            <label class="flex items-center gap-2 cursor-pointer font-medium text-stone-700">
+              <input type="checkbox" id="chk-scent-3" onchange="onScentToggle(3)" class="accent-amber-700 w-3.5 h-3.5">
+              <span class="w-3 h-3 rounded-full inline-block" style="background:#877751"></span><span>草本香</span>
+            </label>
+            <div class="flex items-center gap-1">
+              <input type="number" id="val-scent-3" value="0" disabled class="w-12 border border-stone-100 text-stone-300 rounded-md p-1 text-center bg-stone-50">
+              <span class="text-stone-300">%</span>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between text-xs border-b border-stone-100 pb-1.5">
+            <label class="flex items-center gap-2 cursor-pointer font-medium text-stone-700">
+              <input type="checkbox" id="chk-scent-4" checked onchange="onScentToggle(4)" class="accent-amber-700 w-3.5 h-3.5">
+              <span class="w-3 h-3 rounded-full inline-block" style="background:#d1b277"></span><span>果香</span>
+            </label>
+            <div class="flex items-center gap-1">
+              <input type="number" id="val-scent-4" value="10" oninput="validateAndRenderBars()" class="w-12 border border-stone-200 rounded-md p-1 text-center bg-white field-focus">
+              <span class="text-stone-400">%</span>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between text-xs border-b border-stone-100 pb-1.5">
+            <label class="flex items-center gap-2 cursor-pointer font-medium text-stone-700">
+              <input type="checkbox" id="chk-scent-5" onchange="onScentToggle(5)" class="accent-amber-700 w-3.5 h-3.5">
+              <span class="w-3 h-3 rounded-full inline-block" style="background:#ddcaba"></span><span>奶香</span>
+            </label>
+            <div class="flex items-center gap-1">
+              <input type="number" id="val-scent-5" value="0" disabled class="w-12 border border-stone-100 text-stone-300 rounded-md p-1 text-center bg-stone-50">
+              <span class="text-stone-300">%</span>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between text-xs">
+            <label class="flex items-center gap-2 cursor-pointer font-medium text-stone-700">
+              <input type="checkbox" id="chk-scent-6" onchange="onScentToggle(6)" class="accent-amber-700 w-3.5 h-3.5">
+              <span class="w-3 h-3 rounded-full inline-block" style="background:#749198"></span><span>海洋香</span>
+            </label>
+            <div class="flex items-center gap-1">
+              <input type="number" id="val-scent-6" value="0" disabled class="w-12 border border-stone-100 text-stone-300 rounded-md p-1 text-center bg-stone-50">
+              <span class="text-stone-300">%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="section-dots">
+        <p class="section-label mb-2.5">📍 特質圓點落點</p>
+        <div class="row-card p-3 flex flex-col gap-2.5 text-xs" onfocusin="hlPreview('dots')" onfocusout="unhlPreview('dots')">
+          <div class="flex justify-between items-center gap-2">
+            <span class="text-stone-500 shrink-0">溫暖安定 ↔ 清新提神</span>
+            <div class="flex items-center gap-1">
+              <input type="number" id="dot-1" value="0" min="0" max="100" oninput="renderOutput()" class="w-12 border border-stone-200 rounded-md p-1 text-center bg-white field-focus">
+              <span class="text-stone-400">%</span>
+            </div>
+          </div>
+          <div class="flex justify-between items-center gap-2">
+            <span class="text-stone-500 shrink-0">優雅浪漫 ↔ 神秘深沉</span>
+            <div class="flex items-center gap-1">
+              <input type="number" id="dot-2" value="10" min="0" max="100" oninput="renderOutput()" class="w-12 border border-stone-200 rounded-md p-1 text-center bg-white field-focus">
+              <span class="text-stone-400">%</span>
+            </div>
+          </div>
+          <div class="flex justify-between items-center gap-2">
+            <span class="text-stone-500 shrink-0">淡雅 ↔ 濃郁</span>
+            <div class="flex items-center gap-1">
+              <input type="number" id="dot-3" value="80" min="0" max="100" oninput="renderOutput()" class="w-12 border border-stone-200 rounded-md p-1 text-center bg-white field-focus">
+              <span class="text-stone-400">%</span>
+            </div>
+          </div>
+          <div class="flex justify-between items-center gap-2">
+            <span class="text-stone-500 shrink-0">日間 ↔ 夜晚</span>
+            <div class="flex items-center gap-1">
+              <input type="number" id="dot-4" value="50" min="0" max="100" oninput="renderOutput()" class="w-12 border border-stone-200 rounded-md p-1 text-center bg-white field-focus">
+              <span class="text-stone-400">%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <div class="h-px flex-1 bg-stone-100"></div>
+        <span class="section-label">📝 圖文排版序列</span>
+        <div class="h-px flex-1 bg-stone-100"></div>
+      </div>
+
+      <div id="row-container" class="flex flex-col gap-2.5"></div>
+
+      <button onclick="addRow()"
+        class="w-full border-2 border-dashed border-stone-300 hover:border-amber-500 hover:bg-amber-50 text-stone-400 hover:text-amber-700 py-3 rounded-xl text-xs font-semibold transition-all duration-200 cursor-pointer bg-white">
+        ＋ 新增圖文組件
+      </button>
+    </div>
+
+    <div class="panel-card p-5 sticky top-[68px]">
+      <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-2">
+          <span class="text-stone-400">👀</span>
+          <h2 class="text-sm font-bold text-stone-700">官網畫面模擬</h2>
+        </div>
+        <span class="text-[10px] text-stone-400 bg-stone-100 px-2 py-0.5 rounded-full">BVSHOP 寬度 800px</span>
+      </div>
+      <div id="preview-scroll" class="preview-bg rounded-xl border border-stone-200 overflow-y-auto" style="max-height:calc(100vh - 160px);min-height:300px">
+        <div id="preview-area" style="text-align:center;padding:20px 16px"></div>
+      </div>
+    </div>
+
+    <div class="panel-card p-5 flex flex-col sticky top-[68px]">
+      <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-2">
+          <span class="text-stone-400">💻</span>
+          <h2 class="text-sm font-bold text-stone-700">BVSHOP 代碼輸出</h2>
+        </div>
+        <button onclick="copyCode()" id="copy-btn" class="btn-brand text-xs font-semibold px-4 py-2 rounded-lg flex items-center gap-1.5 shadow-sm">
+          <span>📋</span><span>複製 HTML</span>
+        </button>
+      </div>
+      <div id="code-panel" class="rounded-xl border border-stone-800 overflow-auto p-4 select-all" style="background:#1e1e1e;height:calc(100vh - 180px);min-height:300px">
+        <pre id="code-highlighted" class="font-mono text-[11px] whitespace-pre-wrap break-all text-[#d4d4d4] leading-relaxed"></pre>
+      </div>
+      <textarea id="code-plain" class="hidden"></textarea>
+    </div>
+
+  </div>
+</div>
+
+<div id="color-popover" class="hidden absolute z-50 bg-white p-3 rounded-xl flex flex-col gap-2" style="width:220px">
+  <div class="text-[11px] font-bold text-stone-600">選擇顏色：</div>
+  <div class="grid grid-cols-3 gap-1.5">
+    <button onclick="pickColor('#aa846a')" class="flex flex-col items-center gap-1 p-1.5 rounded-lg hover:bg-stone-50 border border-transparent hover:border-stone-200 cursor-pointer transition-all group">
+      <div class="w-8 h-8 rounded-full shadow-sm group-hover:scale-110 transition-transform" style="background:#aa846a"></div>
+      <span class="text-[9px] font-mono text-stone-400">#aa846a</span>
+    </button>
+    <button onclick="pickColor('#887f6b')" class="flex flex-col items-center gap-1 p-1.5 rounded-lg hover:bg-stone-50 border border-transparent hover:border-stone-200 cursor-pointer transition-all group">
+      <div class="w-8 h-8 rounded-full shadow-sm group-hover:scale-110 transition-transform" style="background:#887f6b"></div>
+      <span class="text-[9px] font-mono text-stone-400">#887f6b</span>
+    </button>
+    <button onclick="pickColor('#313421')" class="flex flex-col items-center gap-1 p-1.5 rounded-lg hover:bg-stone-50 border border-transparent hover:border-stone-200 cursor-pointer transition-all group">
+      <div class="w-8 h-8 rounded-full shadow-sm group-hover:scale-110 transition-transform" style="background:#313421"></div>
+      <span class="text-[9px] font-mono text-stone-400">#313421</span>
+    </button>
+    <button onclick="pickColor('#c89e81')" class="flex flex-col items-center gap-1 p-1.5 rounded-lg hover:bg-stone-50 border border-transparent hover:border-stone-200 cursor-pointer transition-all group">
+      <div class="w-8 h-8 rounded-full shadow-sm group-hover:scale-110 transition-transform" style="background:#c89e81"></div>
+      <span class="text-[9px] font-mono text-stone-400">#c89e81</span>
+    </button>
+    <button onclick="pickColor('#a09c88')" class="flex flex-col items-center gap-1 p-1.5 rounded-lg hover:bg-stone-50 border border-transparent hover:border-stone-200 cursor-pointer transition-all group">
+      <div class="w-8 h-8 rounded-full shadow-sm group-hover:scale-110 transition-transform" style="background:#a09c88"></div>
+      <span class="text-[9px] font-mono text-stone-400">#a09c88</span>
+    </button>
+    <button onclick="pickColor('#ebaf9b')" class="flex flex-col items-center gap-1 p-1.5 rounded-lg hover:bg-stone-50 border border-transparent hover:border-stone-200 cursor-pointer transition-all group">
+      <div class="w-8 h-8 rounded-full shadow-sm group-hover:scale-110 transition-transform" style="background:#ebaf9b"></div>
+      <span class="text-[9px] font-mono text-stone-400">#ebaf9b</span>
+    </button>
+    <button onclick="pickColor('#c1e6ee')" class="flex flex-col items-center gap-1 p-1.5 rounded-lg hover:bg-stone-50 border border-transparent hover:border-stone-200 cursor-pointer transition-all group">
+      <div class="w-8 h-8 rounded-full shadow-sm group-hover:scale-110 transition-transform" style="background:#c1e6ee"></div>
+      <span class="text-[9px] font-mono text-stone-400">#c1e6ee</span>
+    </button>
+    <button onclick="pickColor('#f5bc82')" class="flex flex-col items-center gap-1 p-1.5 rounded-lg hover:bg-stone-50 border border-transparent hover:border-stone-200 cursor-pointer transition-all group">
+      <div class="w-8 h-8 rounded-full shadow-sm group-hover:scale-110 transition-transform" style="background:#f5bc82"></div>
+      <span class="text-[9px] font-mono text-stone-400">#f5bc82</span>
+    </button>
+    <button onclick="pickColor('#f09637')" class="flex flex-col items-center gap-1 p-1.5 rounded-lg hover:bg-stone-50 border border-transparent hover:border-stone-200 cursor-pointer transition-all group">
+      <div class="w-8 h-8 rounded-full shadow-sm group-hover:scale-110 transition-transform" style="background:#f09637"></div>
+      <span class="text-[9px] font-mono text-stone-400">#f09637</span>
+    </button>
+  </div>
+  <div class="pt-1.5 border-t border-stone-100">
+    <div class="flex items-center gap-1.5 mb-1.5">
+      <input type="color" id="free-color" oninput="pickColor(this.value)" class="w-7 h-7 rounded-lg border border-stone-200 cursor-pointer p-0.5 bg-white shadow-sm">
+      <span class="text-[10px] text-stone-400">自訂任意顏色</span>
+    </div>
+    <div class="flex items-center gap-2">
+      <div id="color-preview-dot" class="w-5 h-5 rounded-full border border-stone-300 shadow-sm shrink-0" style="background:#aa846a"></div>
+      <input type="text" id="color-hex" class="flex-1 border border-stone-200 text-[11px] p-1 rounded-md text-center font-mono" value="#aa846a">
+    </div>
+  </div>
+  <button onclick="applyColor()" class="w-full btn-brand text-[11px] font-semibold py-1.5 rounded-lg">確定套用</button>
+</div>
+
+<div id="import-confirm" class="hidden fixed inset-0 z-50 flex items-center justify-center" style="background:rgba(0,0,0,0.45)">
+  <div class="bg-white rounded-2xl p-6 shadow-2xl w-80">
+    <div class="text-base font-bold text-stone-800 mb-1">📋 解析完成，請確認</div>
+    <p class="text-xs text-stone-500 mb-4">以下是偵測到的元素數量，確認正確後再載入。</p>
+    <div id="import-summary" class="bg-stone-50 rounded-xl p-3 text-xs text-stone-700 flex flex-col gap-1.5 mb-4"></div>
+    <div class="flex gap-2">
+      <button onclick="cancelImport()" class="flex-1 border border-stone-200 text-stone-600 text-xs font-semibold py-2 rounded-lg cursor-pointer hover:bg-stone-50">取消</button>
+      <button onclick="confirmImport()" class="flex-1 btn-brand text-xs font-semibold py-2 rounded-lg">✅ 確認載入</button>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+// ═══════════════════════════════════════════════════════════
+//  全域狀態
+// ═══════════════════════════════════════════════════════════
+let rowCount       = 0;       // 唯一行 id 遞增來源
+let activePickerId = null;    // 當前打開調色盤的 row id
+let pendingImport  = null;    // 待確認的匯入資料
+
+// ═══════════════════════════════════════════════════════════
+//  品牌色常數
+// ═══════════════════════════════════════════════════════════
+const C_H3   = '#caa379';   // h3 固定金色
+const C_STAR = '#caa379';   // ✦ 固定金色
+const C_H4   = '#926b59';   // h4 預設品牌咖啡色
+
+// 6大固定官方香調庫組態
+const SCENT_LIBRARY = {
+    1: { label: '木質香', color: '#675b53' },
+    2: { label: '花香',   color: '#c49281' },
+    3: { label: '草本香', color: '#877751' },
+    4: { label: '果香',   color: '#d1b277' },
+    5: { label: '奶香',   color: '#ddcaba' },
+    6: { label: '海洋香', color: '#749198' }
+};
+
+// ═══════════════════════════════════════════════════════════
+//  預設版型
+// ═══════════════════════════════════════════════════════════
+const DEFAULT_LAYOUT = [
+    { type:'h3_gold',  text:'溫慢木質香氛', color:'' },
+    { type:'star',     text:'',            color:'' },
+    { type:'h4_brown', text:'香調描述標題', color:'' },
+    { type:'p_system', text:"在這裡輸入您的香氛品牌故事與產品描述文案，讓每一段文字都散發出 It's Saturday! 的獨特氣息。", color:'' },
+    { type:'br',       text:'',            color:'' },
+    { type:'img',      text:'',            color:'' },
+];
+
+// ═══════════════════════════════════════════════════════════
+//  初始化
+// ═══════════════════════════════════════════════════════════
+function init() {
+    DEFAULT_LAYOUT.forEach(r => addRow(r.type, r.text, r.color));
+    validateAndRenderBars();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  顯示組件切換
+// ═══════════════════════════════════════════════════════════
+function toggleSections() {
+    document.getElementById('section-bars').style.display =
+        document.getElementById('toggle-bars').checked ? 'block' : 'none';
+    document.getElementById('section-dots').style.display =
+        document.getElementById('toggle-dots').checked ? 'block' : 'none';
+    renderOutput();
+}
+
+// 香調核取開關狀態連動
+function onScentToggle(id) {
+    const chk = document.getElementById(`chk-scent-${id}`);
+    const valInput = document.getElementById(`val-scent-${id}`);
+    if (chk.checked) {
+        valInput.disabled = false;
+        valInput.classList.remove('bg-stone-50', 'text-stone-300', 'border-stone-100');
+        valInput.classList.add('bg-white', 'text-stone-700', 'border-stone-200');
+        if (parseInt(valInput.value) === 0) valInput.value = 10;
+    } else {
+        valInput.value = 0;
+        valInput.disabled = true;
+        valInput.classList.remove('bg-white', 'text-stone-700', 'border-stone-200');
+        valInput.classList.add('bg-stone-50', 'text-stone-300', 'border-stone-100');
+    }
+    validateAndRenderBars();
+}
+
+// 驗證香調加總
+function validateAndRenderBars() {
+    let total = 0;
+    for (let i = 1; i <= 6; i++) {
+        if (document.getElementById(`chk-scent-${i}`).checked) {
+            total += parseInt(document.getElementById(`val-scent-${i}`).value) || 0;
+        }
+    }
+    
+    const badge = document.getElementById('bar-total-badge');
+    badge.textContent = `加總 ${total}%`;
+    if (total === 100) {
+        badge.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800';
+    } else {
+        badge.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-100 text-red-600 animate-pulse';
+    }
+    renderOutput();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  新增行
+// ═══════════════════════════════════════════════════════════
+function addRow(type, text, color, afterId) {
+    type    = type  || 'p_system';
+    text    = text  || '';
+    color   = color || '';
+    rowCount++;
+    const idx   = rowCount;
+    const rowId = 'row-' + idx;
+
+    const rawText = text.replace(/<br\s*\/?>/gi, '\n');
+    const hasColorPicker = (type === 'h4_brown' || type === 'p_system');
+    const colorChecked   = (color && color !== C_H4) ? 'checked' : '';
+    const resolvedColor  = color || C_H4;
+
+    const rowHtml = `<div id="${rowId}" data-index="${idx}" draggable="false" class="draggable-row row-card flex flex-col gap-2 p-3 relative">
+  <div class="flex items-center justify-between gap-1.5">
+    <div class="flex items-center gap-1.5 flex-1 min-w-0">
+      <div class="row-num">${idx}</div>
+      <span class="drag-handle text-stone-300 cursor-grab px-0.5 select-none text-sm hover:text-stone-500 shrink-0" title="按住拖曳排序">⠿</span>
+      <select onchange="onTypeChange('${rowId}')" class="type-select bg-white border border-stone-200 text-[11px] rounded-lg px-2 py-1 font-medium text-stone-700 field-focus min-w-0 flex-1">
+        <option value="h3_gold"  ${type==='h3_gold'  ?'selected':''}>超大標 h3 · 金色</option>
+        <option value="h4_brown" ${type==='h4_brown' ?'selected':''}>標題 h4 · 自訂色</option>
+        <option value="p_system" ${type==='p_system' ?'selected':''}>內文 p · 自訂色</option>
+        <option value="img"      ${type==='img'      ?'selected':''}>插入圖片 img</option>
+        <option value="star"     ${type==='star'     ?'selected':''}>✦ 分隔符號</option>
+        <option value="br"       ${type==='br'       ?'selected':''}>空行間距</option>
+      </select>
+    </div>
+    <div class="color-picker-wrap flex items-center gap-1.5 bg-white border border-stone-200 rounded-lg px-2 py-1 shadow-sm shrink-0" style="display:${hasColorPicker?'flex':'none'}">
+      <input type="checkbox" class="color-toggle accent-amber-700 cursor-pointer w-3 h-3" ${colorChecked} onchange="renderOutput()">
+      <button onclick="openColorPicker(this,'${rowId}')" class="color-trigger text-base leading-none cursor-pointer hover:scale-110 transition-transform select-none shrink-0" title="點擊選色">🎨</button>
+      <input type="hidden" class="color-val" value="${resolvedColor}">
+    </div>
+    <div class="flex items-center gap-1 shrink-0">
+      <button onclick="moveRow('${rowId}',-1)" class="text-[10px] bg-white border border-stone-200 hover:bg-stone-100 px-1.5 py-0.5 rounded-md shadow-sm cursor-pointer text-stone-500">▲</button>
+      <button onclick="moveRow('${rowId}',1)"  class="text-[10px] bg-white border border-stone-200 hover:bg-stone-100 px-1.5 py-0.5 rounded-md shadow-sm cursor-pointer text-stone-500">▼</button>
+      <button onclick="dupRow('${rowId}')" class="text-[10px] bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-800 px-2 py-0.5 rounded-md font-semibold shadow-sm cursor-pointer">複製</button>
+      <button onclick="delRow('${rowId}')" class="text-stone-300 hover:text-red-500 px-1 py-0.5 cursor-pointer rounded-md hover:bg-red-50 transition-colors text-sm" title="刪除">✕</button>
+    </div>
+  </div>
+  <textarea oninput="renderOutput()" onfocus="hlPreview(${idx})" onblur="unhlPreview(${idx})"
+    class="text-input w-full bg-white border border-stone-200 text-xs rounded-lg p-2.5 text-stone-700 min-h-[44px] field-focus transition-all resize-none leading-relaxed"
+    placeholder="請輸入內容">${rawText}</textarea>
+</div>`;
+
+    const container = document.getElementById('row-container');
+    if (afterId) {
+        document.getElementById(afterId).insertAdjacentHTML('afterend', rowHtml);
+    } else {
+        container.insertAdjacentHTML('beforeend', rowHtml);
+    }
+    applyTypeUI(rowId);
+    setupDrag();
+}
+
+function onTypeChange(rowId) { applyTypeUI(rowId); renderOutput(); }
+
+function applyTypeUI(rowId) {
+    const row      = document.getElementById(rowId);
+    const type     = row.querySelector('.type-select').value;
+    const textarea = row.querySelector('.text-input');
+    const cpWrap   = row.querySelector('.color-picker-wrap');
+
+    textarea.disabled = false;
+    textarea.classList.remove('bg-stone-100','text-stone-400','cursor-not-allowed');
+    cpWrap.style.display = 'none';
+
+    if (type === 'star') {
+        textarea.value = '✦';
+        textarea.disabled = true;
+        textarea.classList.add('bg-stone-100','text-stone-400','cursor-not-allowed');
+    } else if (type === 'br') {
+        textarea.value = '';
+        textarea.placeholder = '🔒 空行間距，不需輸入文字';
+        textarea.disabled = true;
+        textarea.classList.add('bg-stone-100','text-stone-400','cursor-not-allowed');
+    } else if (type === 'h3_gold') {
+        textarea.placeholder = '請輸入大標題文字…';
+    } else if (type === 'h4_brown') {
+        textarea.placeholder = '請輸入標題文字…';
+        cpWrap.style.display = 'flex';
+    } else if (type === 'p_system') {
+        textarea.placeholder = '請輸入內文段落…';
+        cpWrap.style.display = 'flex';
+    } else if (type === 'img') {
+        textarea.placeholder = '請貼上完整的圖片網址（https://…）';
+    }
+}
+
+function delRow(id) { document.getElementById(id).remove(); renderOutput(); }
+
+function moveRow(id, dir) {
+    const c = document.getElementById('row-container');
+    const r = document.getElementById(id);
+    if (dir === -1 && r.previousElementSibling) c.insertBefore(r, r.previousElementSibling);
+    if (dir ===  1 && r.nextElementSibling)     c.insertBefore(r.nextElementSibling, r);
+    renderOutput();
+}
+
+function dupRow(id) {
+    const r   = document.getElementById(id);
+    const chk = r.querySelector('.color-toggle').checked;
+    addRow(
+        r.querySelector('.type-select').value,
+        r.querySelector('.text-input').value,
+        chk ? r.querySelector('.color-val').value : '',
+        id
+    );
+    renderOutput();
+}
+
+function openColorPicker(triggerEl, rowId) {
+    activePickerId = rowId;
+    const pop  = document.getElementById('color-popover');
+    const rect = triggerEl.getBoundingClientRect();
+    pop.style.top  = `${rect.bottom + window.scrollY + 6}px`;
+    pop.style.left = `${rect.left + window.scrollX - 80}px`;
+    pop.classList.remove('hidden');
+    pickColor(document.getElementById(rowId).querySelector('.color-val').value);
+}
+
+function pickColor(hex) {
+    document.getElementById('color-preview-dot').style.backgroundColor = hex;
+    document.getElementById('color-hex').value   = hex.toUpperCase();
+    document.getElementById('free-color').value  = hex;
+}
+
+function applyColor() {
+    if (!activePickerId) return;
+    const hex = document.getElementById('color-hex').value;
+    const row = document.getElementById(activePickerId);
+    row.querySelector('.color-val').value          = hex;
+    row.querySelector('.color-toggle').checked     = true;
+    document.getElementById('color-popover').classList.add('hidden');
+    renderOutput();
+}
+
+document.addEventListener('mousedown', e => {
+    const pop = document.getElementById('color-popover');
+    if (!pop.classList.contains('hidden') && !pop.contains(e.target) && !e.target.classList.contains('color-trigger')) {
+        pop.classList.add('hidden');
+    }
+});
+
+function hlPreview(key) {
+    const el = document.getElementById('pi-' + key);
+    if (el) { el.classList.add('preview-highlight'); el.scrollIntoView({ block:'nearest', behavior:'smooth' }); }
+}
+function unhlPreview(key) {
+    const el = document.getElementById('pi-' + key);
+    if (el) el.classList.remove('preview-highlight');
+}
+
+function setupDrag() {
+    const container = document.getElementById('row-container');
+    container.querySelectorAll('.draggable-row').forEach(row => {
+        const h = row.querySelector('.drag-handle');
+        h.onmousedown = () => row.setAttribute('draggable','true');
+        h.onmouseup   = () => row.setAttribute('draggable','false');
+        row.ondragstart = () => row.classList.add('dragging');
+        row.ondragend   = () => { row.classList.remove('dragging'); row.setAttribute('draggable','false'); renderOutput(); };
+    });
+    container.ondragover = e => {
+        e.preventDefault();
+        const dragged = container.querySelector('.dragging');
+        if (!dragged) return;
+        const after = [...container.querySelectorAll('.draggable-row:not(.dragging)')]
+            .reduce((cl, ch) => {
+                const off = e.clientY - ch.getBoundingClientRect().top - ch.getBoundingClientRect().height / 2;
+                return (off < 0 && off > cl.offset) ? { offset:off, element:ch } : cl;
+            }, { offset:-Infinity }).element;
+        after ? container.insertBefore(dragged, after) : container.appendChild(dragged);
+    };
+}
+
+function highlightCode(src) {
+    let t = src.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    t = t.replace(/(&lt;!--[\s\S]*?--&gt;)/g, '<span class="hl-cmt">$1</span>');
+    t = t.replace(
+        /(&lt;\/?)(div|center|p|h3|h4|img|br|strong)([\s\S]*?)(&gt;)/g,
+        (_, open, tag, body, close) => {
+            const pb = body.replace(/([a-zA-Z\-]+)=(&quot;.*?&quot;)/g, (__, k, val) => {
+                const cv = val.includes('#') ? val.replace(/(#[a-fA-F0-9]{3,8})/, '<span class="hl-color">$1</span>') : val;
+                return `<span class="hl-attr">${k}</span><span class="hl-symbol">=</span><span class="hl-val">${cv}</span>`;
+            });
+            return `<span class="hl-symbol">${open}</span><span class="hl-tag">${tag}</span>${pb}<span class="hl-symbol">${close}</span>`;
+        }
+    );
+    return t;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  renderOutput — 唯一輸出引擎
+// ═══════════════════════════════════════════════════════════
+function renderOutput() {
+    let html = '';
+    let prev = '';
+
+    // ── 香氣比例條 ────────────────────────────────────────
+    if (document.getElementById('toggle-bars').checked) {
+        let activeScents = [];
+        for (let i = 1; i <= 6; i++) {
+            if (document.getElementById(`chk-scent-${i}`).checked) {
+                let v = parseInt(document.getElementById(`val-scent-${i}`).value) || 0;
+                activeScents.push({ label: SCENT_LIBRARY[i].label, val: v, color: SCENT_LIBRARY[i].color });
+            }
+        }
+
+        if (activeScents.length > 0) {
+            let labelDivs = activeScents.map(s => `<div style="flex: 0 0 ${s.val}%; text-align: center;">${s.label}</div>`).join('\n');
+            let barDivs = activeScents.map(s => `<div style="flex: 0 0 ${s.val}%; background: ${s.color};">&nbsp;</div>`).join('\n');
+
+            const bh = '\n\n'
+                + `<div style="margin: 8px 100px 18px 100px; color: #494746; font-family: 'Noto Sans TC',sans-serif;">\n`
+                + `<div style="display: flex; font-size: 14px; margin-bottom: 6px;">\n${labelDivs}\n</div>\n`
+                + `<div style="display: flex; height: 12px; border-radius: 6px; overflow: hidden;">\n${barDivs}\n</div>\n</div>\n`;
+            html += bh;
+            prev += `<div id="pi-bars" class="w-full relative transition-all">${bh}</div>`;
+        }
+    }
+
+    // ── 特質圓點 ────────────────────────────────────────────
+    if (document.getElementById('toggle-dots').checked) {
+        const d1=gv('dot-1'), d2=gv('dot-2'), d3=gv('dot-3'), d4=gv('dot-4');
+        const dotRow = (lL, lR, pct) =>
+            `<div style="position: relative; margin: 10px 0; height: 30px; color: #494746;">\n`
+            + `<div style="position: absolute; left: 0; top: 0;">${lL}</div>\n`
+            + `<div style="position: absolute; right: 0; top: 0;">${lR}</div>\n`
+            + `<div style="position: absolute; left: 100px; right: 100px; top: 13px;">\n`
+            + `<div style="position: relative; height: 1px; background: #999999;">\n`
+            + `<div style="position: absolute; left: ${pct}%; top: 50%; width: 14px; height: 14px; border-radius: 50%; background: #8b6b4d; transform: translate(-50%,-50%); opacity: 70%;">&nbsp;</div>\n`
+            + `</div>\n</div>\n</div>\n`;
+        const dh = '\n\n'
+            + '\n' + dotRow('溫慢安定','清新提神',d1)
+            + '\n' + dotRow('優雅浪漫','神秘深沉',d2)
+            + '\n'         + dotRow('淡雅','濃郁',d3)
+            + '\n'         + dotRow('日間','夜晚',d4);
+        html += dh;
+        prev += `<div id="pi-dots" class="w-full relative transition-all">${dh}</div>`;
+    }
+
+    // ── 圖文主體 ────────────────────────────────────────────
+    html += '\n<center>\n';
+
+    for (const row of document.getElementById('row-container').children) {
+        const idx  = row.getAttribute('data-index');
+        const type = row.querySelector('.type-select').value;
+        const text = row.querySelector('.text-input').value.trim();
+        const chk  = row.querySelector('.color-toggle').checked;
+        const col  = row.querySelector('.color-val').value;
+
+        let finalColor = '';
+        if      (type === 'h3_gold')  finalColor = C_H3;
+        else if (type === 'h4_brown') finalColor = chk ? col : C_H4;
+        else if (type === 'p_system') finalColor = chk ? col : '';
+
+        const cs = finalColor ? ` style="color: ${finalColor};"` : '';
+        const ps = finalColor ? ` style="color:${finalColor};margin:0;padding:6px 0;"` : ' style="margin:0;padding:6px 0;color:#333;"';
+        const ft = text.replace(/\n/g, ' <br />\n');
+
+        let lh = '';   
+        let lp = '';   
+
+        switch (type) {
+            case 'star':
+                lh = `\n<h3 style="color: ${C_STAR};">✦</h3>\n`;
+                lp = `<h3 style="color:${C_STAR};font-weight:bold;font-size:1.17em;margin:0;">✦</h3>`;
+                break;
+            case 'br':
+                lh = `\n<p>&nbsp;</p>\n`;
+                lp = `<p style="margin:0;padding:10px 0;">&nbsp;</p>`;
+                break;
+            case 'img':
+                if (!text) break;
+                lh = `\n<img src="${text}" width="800" />\n`;
+                lp = `<img src="${text}" style="max-width:100%;height:auto;display:block;margin:0 auto;" width="800" />`;
+                break;
+            case 'h3_gold':
+                if (!text) break;
+                lh = `\n<h3 style="color: ${C_H3};">${ft}</h3>\n`;
+                lp = `<h3 style="color:${C_H3};font-weight:bold;font-size:1.17em;margin:0;padding:8px 0;">${ft}</h3>`;
+                break;
+            case 'h4_brown':
+                if (!text) break;
+                lh = `\n<h4${cs}><strong>${ft}</strong></h4>\n`;
+                lp = `<h4${ps}><strong>${ft}</strong></h4>`;
+                break;
+            case 'p_system':
+                if (!text) break;
+                lh = `\n<p${cs}>${ft}</p>\n`;
+                lp = `<p${ps}>${ft}</p>`;
+                break;
+        }
+
+        html += lh;
+        if (lp) prev += `<div id="pi-${idx}" class="w-full relative transition-all">${lp}</div>`;
+    }
+
+    html += '</center>';
+
+    document.getElementById('code-plain').value           = html;
+    document.getElementById('code-highlighted').innerHTML = highlightCode(html);
+    document.getElementById('preview-area').innerHTML     = prev;
+}
+
+function gv(id) { return document.getElementById(id).value; }
+
+function copyCode() {
+    navigator.clipboard.writeText(document.getElementById('code-plain').value).then(() => {
+        const btn = document.getElementById('copy-btn');
+        btn.innerHTML = '<span>✅</span><span>已複製！</span>';
+        btn.style.background = 'linear-gradient(135deg,#1a7a3a,#22a85a)';
+        btn.classList.add('anim-ok');
+        setTimeout(() => {
+            btn.innerHTML = '<span>📋</span><span>複製 HTML</span>';
+            btn.style.background = '';
+            btn.classList.remove('anim-ok');
+        }, 2200);
+    }).catch(() => {
+        const ta = document.getElementById('code-plain');
+        ta.classList.remove('hidden'); ta.select(); document.execCommand('copy'); ta.classList.add('hidden');
+    });
+}
+
+// ═══════════════════════════════════════════════════════════
+//  智慧匯入
+// ═══════════════════════════════════════════════════════════
+function importHTML() {
+    const raw = document.getElementById('import-code').value.trim();
+    if (!raw) { alert('請貼上有效的 HTML 代碼！'); return; }
+
+    let doc;
+    try { doc = new DOMParser().parseFromString(raw, 'text/html'); }
+    catch(e) { alert('解析失敗，請確認代碼是否完整。'); return; }
+
+    const bars = { enabled: false, activeIndices: [], vals: { 1:0, 2:0, 3:0, 4:0, 5:0, 6:0 } };
+    const flexDivs = doc.querySelectorAll('div[style*="flex:"]');
+    
+    if (flexDivs.length > 0) {
+        bars.enabled = true;
+        let labelsDetected = [];
+        let percentagesDetected = [];
+        
+        flexDivs.forEach(div => {
+            let txt = div.textContent.trim();
+            if (txt && !txt.includes('%') && txt !== ' ') {
+                labelsDetected.push(txt);
+            }
+            let m = div.style.flex.match(/0\s+0\s+(\d+)%/);
+            if (m) percentagesDetected.push(parseInt(m[1]));
+        });
+        
+        labelsDetected.forEach((label, i) => {
+            let matchedId = null;
+            for (let id in SCENT_LIBRARY) {
+                if (SCENT_LIBRARY[id].label === label) {
+                    matchedId = id;
+                    break;
+                }
+            }
+            if (matchedId && percentagesDetected[i] !== undefined) {
+                bars.activeIndices.push(parseInt(matchedId));
+                bars.vals[matchedId] = percentagesDetected[i];
+            }
+        });
+    }
+
+    const dots = { enabled:false, vals:[0,10,80,50] };
+    const dotEls = [];
+    doc.querySelectorAll('div[style*="left:"]').forEach(d => {
+        if (d.style.width === '14px') {
+            const m = d.style.left.match(/(\d+)%/);
+            if (m) dotEls.push(parseInt(m[1]));
+        }
+    });
+    if (dotEls.length >= 4) { dots.enabled = true; dots.vals = dotEls.slice(0,4); }
+
+    const collected = [];
+    function collect(el) {
+        for (const ch of el.children) {
+            if (ch.tagName.toLowerCase() === 'center') { collect(ch); continue; }
+            collected.push(ch);
+        }
+    }
+    collect(doc.body);
+
+    const parsedRows = [];
+    let cntStar=0, cntH3=0, cntH4=0, cntP=0, cntImg=0, cntBr=0;
+
+    for (const node of collected) {
+        const tag   = node.tagName.toLowerCase();
+        const color = (node.style.color || '').toLowerCase().trim();
+        const inner = node.innerHTML.trim();
+
+        if (tag === 'p' && (inner === '&nbsp;' || inner === '' || inner === '<br>')) {
+            parsedRows.push({ type:'br', text:'', color:'' }); cntBr++; continue;
+        }
+        if (tag === 'h3' && node.textContent.includes('✦')) {
+            parsedRows.push({ type:'star', text:'', color:'' }); cntStar++; continue;
+        }
+        if (tag === 'img') {
+            const src = node.getAttribute('src');
+            if (src) { parsedRows.push({ type:'img', text:src, color:'' }); cntImg++; }
+            continue;
+        }
+        if (tag === 'p' && inner.includes('<img')) {
+            node.querySelectorAll('img').forEach(img => {
+                const src = img.getAttribute('src');
+                if (src) { parsedRows.push({ type:'img', text:src, color:'' }); cntImg++; }
+            });
+            continue;
+        }
+        if (tag === 'h3') {
+            parsedRows.push({ type:'h3_gold', text:inner, color:'' }); cntH3++; continue;
+        }
+        if (tag === 'h4') {
+            const clean = inner.replace(/<\/?strong>/g,'');
+            const isDefault = (!color || color === C_H4.toLowerCase() || color.startsWith('rgb(146') || color.startsWith('rgb(147'));
+            parsedRows.push({ type:'h4_brown', text:clean, color: isDefault ? '' : color });
+            cntH4++; continue;
+        }
+        if (tag === 'p') {
+            if (inner === '<img alt="">' || inner === '') continue;
+            parsedRows.push({ type:'p_system', text:inner, color: color || '' });
+            cntP++; continue;
+        }
+    }
+
+    pendingImport = { bars, dots, rows: parsedRows };
+    document.getElementById('import-summary').innerHTML = [
+        bars.enabled ? `📊 香氣比例條：已智慧識別比對` : '📊 香氣比例條：未偵測',
+        dots.enabled ? `📍 特質圓點：${dots.vals.join(' / ')}%` : '📍 特質圓點：未偵測',
+        `✦ 分隔符號：${cntStar} 個`,
+        `🔠 超大標題 h3：${cntH3} 個`,
+        `🔡 標題 h4：${cntH4} 個`,
+        `📝 內文 p：${cntP} 個`,
+        `🖼️ 圖片 img：${cntImg} 個`,
+        `↕️ 空行：${cntBr} 個`,
+        `────────────────`,
+        `📦 圖文行合計：${parsedRows.length} 個`,
+    ].map(s => `<div>${s}</div>`).join('');
+    document.getElementById('import-confirm').classList.remove('hidden');
+}
+
+function cancelImport() {
+    pendingImport = null;
+    document.getElementById('import-confirm').classList.add('hidden');
+}
+
+function confirmImport() {
+    document.getElementById('import-confirm').classList.add('hidden');
+    if (!pendingImport) return;
+    const { bars, dots, rows } = pendingImport;
+    pendingImport = null;
+
+    for (let i = 1; i <= 6; i++) {
+        document.getElementById(`chk-scent-${i}`).checked = false;
+        document.getElementById(`val-scent-${i}`).value = 0;
+    }
+
+    document.getElementById('toggle-bars').checked = bars.enabled;
+    if (bars.enabled) {
+        bars.activeIndices.forEach(id => {
+            document.getElementById(`chk-scent-${id}`).checked = true;
+            document.getElementById(`val-scent-${id}`).value = bars.vals[id];
+        });
+    }
+
+    for (let i = 1; i <= 6; i++) {
+        const chk = document.getElementById(`chk-scent-${i}`);
+        const valInput = document.getElementById(`val-scent-${i}`);
+        if (chk.checked) {
+            valInput.disabled = false;
+            valInput.className = "w-12 border border-stone-200 rounded-md p-1 text-center bg-white field-focus";
+        } else {
+            valInput.disabled = true;
+            valInput.className = "w-12 border border-stone-100 text-stone-300 rounded-md p-1 text-center bg-stone-50";
+        }
+    }
+
+    document.getElementById('toggle-dots').checked = dots.enabled;
+    if (dots.enabled) {
+        document.getElementById('dot-1').value = dots.vals[0];
+        document.getElementById('dot-2').value = dots.vals[1];
+        document.getElementById('dot-3').value = dots.vals[2];
+        document.getElementById('dot-4').value = dots.vals[3];
+    }
+
+    toggleSections();
+
+    document.getElementById('row-container').innerHTML = '';
+    rowCount = 0;
+    rows.forEach(r => addRow(r.type, r.text, r.color));
+
+    validateAndRenderBars();
+
+    const toast = document.createElement('div');
+    toast.className = 'fixed bottom-6 right-6 z-50 bg-emerald-700 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-lg';
+    toast.textContent = `🎉 已成功智慧匯入與優化版面`;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 2800);
+}
+
+window.onload = init;
+</script>
+</body>
+</html>
