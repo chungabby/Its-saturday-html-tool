@@ -70,7 +70,7 @@ details[open] > summary ~ * { animation: fadeUp .25s var(--ease); }
     <div class="flex items-center gap-3">
       <img src="https://ik.imagekit.io/itssaturday/its-saturday-logo-300-100-1.png?updatedAt=1753622395304" alt="It's Saturday! Logo" class="h-8 object-contain">
       <h1 class="text-sm font-bold text-stone-800">It's Saturday! 工具總管</h1>
-      <span class="version-badge">2026.11 v7</span>
+      <span class="version-badge">2026.11 v8</span>
     </div>
     <div class="text-xs text-stone-400 flex items-center gap-2">
       <span class="w-2 h-2 rounded-full bg-emerald-400 inline-block"></span><span>草稿會自動保存在這台電腦</span>
@@ -597,12 +597,13 @@ const DEVICE_KEY = 'its-saturday-device-v2';
 const ANN_KEY = 'its-saturday-announce';
 const DEFAULT_ANN = '單筆滿 $1500 免運 🚚 單筆消費 $2500 贈點火器';
 
-// 預覽尺寸：手機版尺寸與上下 bar 高度依官網實機截圖量測（公告 bar 44、選單 74、立即選購 56）
-const BAR_TOP = 118, BAR_BOTTOM = 56;
+// 預覽尺寸：依 iPhone 實機 Safari 截圖量測
+// 上：狀態列 59 + 公告 bar 44 + 選單 74；下：立即選購 52 + Safari 網址列 75
+const BAR_TOP = 177, BAR_BOTTOM = 127;
 const DEVICES = {
-    s: { w: 393, h: 852, label: '📱 393',      name: 'iPhone 16',     phone: true },
-    p: { w: 402, h: 874, label: '402 Pro',     name: 'iPhone Pro',    phone: true },
-    x: { w: 440, h: 956, label: '440 Max',     name: 'iPhone Pro Max', phone: true },
+    s: { w: 393, h: 852, label: '📱 393',      name: 'iPhone 16 · Safari',      phone: true },
+    p: { w: 402, h: 874, label: '402 Pro',     name: 'iPhone Pro · Safari',     phone: true },
+    x: { w: 440, h: 956, label: '440 Max',     name: 'iPhone Pro Max · Safari', phone: true },
     d: { w: 800,         label: '💻 電腦',      name: '電腦版商品描述', phone: false },
 };
 let device = 'p', previewScale = 1;
@@ -805,6 +806,10 @@ body.phone{padding:${BAR_TOP + 16}px 16px ${BAR_BOTTOM + 40}px;}
 body.desk{padding:20px 0 40px;}
 body.desk #site-top, body.desk #site-bottom{display:none;}
 #site-top{position:fixed;top:0;left:0;right:0;z-index:50;pointer-events:none;}
+#site-top .status{height:59px;background:#3a2a11;color:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 30px 0 44px;font:600 16px/1 -apple-system,"SF Pro Text",sans-serif !important;letter-spacing:0;position:relative;}
+#site-top .island{position:absolute;left:50%;top:11px;transform:translateX(-50%);width:124px;height:36px;border-radius:20px;background:#000;}
+#site-top .sb-r{display:flex;align-items:center;gap:6px;font-size:13px;}
+#site-top .sb-r svg{width:auto;height:12px;stroke:none;fill:#fff;}
 #site-top .ann{height:44px;background:#3a2a11;color:#fff;display:flex;align-items:center;justify-content:center;font-size:14.5px;font-weight:500;letter-spacing:.04em;line-height:1;white-space:nowrap;position:relative;padding:0 34px;}
 #site-top .ann .x{position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:16px;font-weight:300;}
 #site-top .hdr{height:74px;background:#fbf9f5;display:flex;align-items:center;padding:0 12px 0 14px;}
@@ -813,7 +818,9 @@ body.desk #site-top, body.desk #site-bottom{display:none;}
 #site-top svg{width:24px;height:24px;stroke:#a29898;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;display:block;}
 #site-top .ic{margin-left:24px;position:relative;}
 #site-top .badge{position:absolute;top:-8px;right:-9px;width:17px;height:17px;border-radius:50%;background:#a29898;color:#fff;font-size:10.5px;line-height:17px;text-align:center;font-family:Georgia,serif !important;letter-spacing:0;}
-#site-bottom{position:fixed;left:0;right:0;bottom:0;height:56px;background:#c19f84;color:#fff;display:flex;align-items:center;justify-content:center;font-size:19px;font-weight:500;letter-spacing:.14em;line-height:1;z-index:50;pointer-events:none;}
+#site-bottom{position:fixed;left:0;right:0;bottom:0;height:127px;background:#c19f84;z-index:50;pointer-events:none;}
+#site-bottom .buy{height:52px;color:#fff;display:flex;align-items:center;justify-content:center;font-size:19px;font-weight:500;letter-spacing:.14em;line-height:1;}
+#site-bottom .url{position:absolute;left:50%;bottom:27px;transform:translateX(-50%);width:132px;height:35px;border-radius:18px;background:#f6ece4;color:#111;display:flex;align-items:center;justify-content:center;font:500 14px/1 -apple-system,"SF Pro Text",sans-serif !important;letter-spacing:0;box-shadow:0 2px 8px rgba(0,0,0,.08);}
 [data-pi]{cursor:pointer;border-radius:6px;transition:background .2s,outline-color .2s;outline:2px solid transparent;outline-offset:3px;}
 @keyframes piIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 .pi-new{animation:piIn .4s cubic-bezier(.2,.8,.2,1);}
@@ -825,6 +832,9 @@ body.desk #site-top, body.desk #site-bottom{display:none;}
 .empty{color:#aaa;font-size:12px;text-align:center;padding:40px 0;}
 </style></head><body>
 <div id="site-top">
+  <div class="status"><span>9:41</span><span class="island"></span>
+    <span class="sb-r"><svg viewBox="0 0 18 12"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5.5" width="3" height="6.5" rx="1"/><rect x="10" y="3" width="3" height="9" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1" opacity=".35"/></svg><span>4G</span><svg viewBox="0 0 27 13"><rect x="0.5" y="0.5" width="23" height="12" rx="3.5" fill="none" stroke="#fff" stroke-opacity=".5"/><rect x="2" y="2" width="15" height="9" rx="2"/><rect x="24.5" y="4.5" width="2" height="4" rx="1" opacity=".5"/></svg></span>
+  </div>
   <div class="ann"><span id="ann-text"></span><span class="x">✕</span></div>
   <div class="hdr">
     <svg viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
@@ -835,7 +845,7 @@ body.desk #site-top, body.desk #site-bottom{display:none;}
   </div>
 </div>
 <div id="content"></div>
-<div id="site-bottom">立即選購</div>
+<div id="site-bottom"><div class="buy">立即選購</div><div class="url">its-saturday.com</div></div>
 </body></html>`);
     d.close();
 
