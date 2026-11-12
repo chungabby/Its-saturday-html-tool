@@ -7,204 +7,116 @@
 <title>It's Saturday! HTML 產生器與修復工具</title>
 <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 <style>
-/* ═══════════════════════════════════════════
-   全域 / 品牌
-═══════════════════════════════════════════ */
 body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #f6f4f1; }
-.version-badge { font-size:10px; background:linear-gradient(90deg,#caa379,#e8c9a0); color:#5a3e28; padding:2px 8px; border-radius:20px; font-weight:600; letter-spacing:0.02em; }
+.version-badge { font-size:10px; background:linear-gradient(90deg,#caa379,#e8c9a0); color:#5a3e28; padding:2px 8px; border-radius:20px; font-weight:600; }
 
-/* ═══════════════════════════════════════════
-   VS Code 語法高亮
-═══════════════════════════════════════════ */
-.hl-tag    { color:#569cd6 !important; }
-.hl-attr   { color:#9cdcfe !important; }
-.hl-val    { color:#ce9178 !important; }
-.hl-cmt    { color:#6a9955 !important; font-style:italic; }
-.hl-symbol { color:#808080 !important; }
-.hl-color  { color:#d7ba7d !important; }
+/* 語法高亮 */
+.hl-tag{color:#569cd6!important}.hl-attr{color:#9cdcfe!important}.hl-val{color:#ce9178!important}
+.hl-symbol{color:#808080!important}.hl-color{color:#d7ba7d!important}
 
-/* ═══════════════════════════════════════════
-   雙向聯動發光框 + 「正在編輯」標籤
-═══════════════════════════════════════════ */
-.preview-highlight {
-    outline:2.5px solid #caa379 !important;
-    outline-offset:5px;
-    background-color:#fffbf6 !important;
-    box-shadow:0 0 18px rgba(202,163,121,0.35) !important;
-    border-radius:6px;
-    position:relative !important;
-    transition:all 0.15s ease-in-out;
-}
-.preview-highlight::before {
-    content:'✏️ 正在編輯';
-    position:absolute; top:-22px; left:50%;
-    transform:translateX(-50%);
-    background:#caa379; color:#fff;
-    font-size:10px; font-weight:700;
-    font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    padding:2px 10px; border-radius:20px;
-    white-space:nowrap; pointer-events:none; z-index:10;
-    box-shadow:0 2px 8px rgba(180,130,80,0.3);
-}
+/* 預覽聯動 */
+.preview-highlight { outline:2.5px solid #caa379!important; outline-offset:5px; background-color:#fffbf6!important; border-radius:6px; position:relative!important; }
+.preview-highlight::before { content:'✏️ 正在編輯'; position:absolute; top:-22px; left:50%; transform:translateX(-50%); background:#caa379; color:#fff; font-size:10px; font-weight:700; padding:2px 10px; border-radius:20px; white-space:nowrap; pointer-events:none; z-index:10; }
 
-/* ═══════════════════════════════════════════
-   共用元件
-═══════════════════════════════════════════ */
-.panel-card {
-    background:#fff; border:1px solid #e8e2d9; border-radius:14px;
-    box-shadow:0 2px 12px rgba(120,90,60,0.06),0 1px 2px rgba(120,90,60,0.04);
-}
-.row-card {
-    background:#faf8f5; border:1px solid #e8e2d9; border-radius:10px;
-    transition:border-color 0.15s,box-shadow 0.15s;
-}
+/* 預覽區：Tailwind 會清掉列點符號與標題字級，這裡補回，模擬一般網站 */
+#preview-area ul { list-style-type: disc; }
+#preview-area ol { list-style-type: decimal; }
+#preview-area li { margin: 2px 0; }
+
+.panel-card { background:#fff; border:1px solid #e8e2d9; border-radius:14px; box-shadow:0 2px 12px rgba(120,90,60,0.06); }
+.row-card { background:#faf8f5; border:1px solid #e8e2d9; border-radius:10px; transition:border-color .15s,box-shadow .15s; }
 .row-card:focus-within { border-color:#caa379; box-shadow:0 0 0 3px rgba(202,163,121,0.12); }
-.field-focus:focus { outline:none !important; border-color:#caa379 !important; box-shadow:0 0 0 3px rgba(202,163,121,0.18); }
-.btn-brand { background:linear-gradient(135deg,#7a5c44,#926b59); color:white; border:none; transition:all 0.18s ease; cursor:pointer; }
+.field-focus:focus { outline:none!important; border-color:#caa379!important; box-shadow:0 0 0 3px rgba(202,163,121,0.18); }
+.btn-brand { background:linear-gradient(135deg,#7a5c44,#926b59); color:#fff; border:none; transition:all .18s; cursor:pointer; }
 .btn-brand:hover { background:linear-gradient(135deg,#5e4433,#7a5c44); transform:translateY(-1px); box-shadow:0 4px 14px rgba(120,80,50,0.3); }
-.section-label { font-size:11px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color:#8c7b6b; }
+.chip { background:#fff; border:1px solid #e8e2d9; color:#6b5a4b; font-size:11px; font-weight:600; padding:6px 4px; border-radius:8px; cursor:pointer; transition:all .15s; }
+.chip:hover { border-color:#caa379; background:#fdf8f2; color:#7a5c44; }
+.section-label { font-size:11px; font-weight:700; letter-spacing:.07em; color:#8c7b6b; }
 .row-num { min-width:20px; height:20px; background:#e8e2d9; color:#8c7b6b; border-radius:50%; font-size:10px; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-
-.dragging { opacity:0.38; background-color:#fef9f0 !important; border:2px dashed #caa379 !important; }
-
-#code-panel::-webkit-scrollbar { width:6px; }
-#code-panel::-webkit-scrollbar-track { background:#2a2a2a; }
-#code-panel::-webkit-scrollbar-thumb { background:#555; border-radius:3px; }
-#preview-scroll::-webkit-scrollbar { width:5px; }
-#preview-scroll::-webkit-scrollbar-track { background:#f0ece5; }
-#preview-scroll::-webkit-scrollbar-thumb { background:#caa379; border-radius:3px; }
-
+.dragging { opacity:.38; border:2px dashed #caa379!important; }
 .preview-bg { background-color:#fff; background-image:radial-gradient(#e0d8ce 1px,transparent 1px); background-size:18px 18px; }
-
-@keyframes pulse-ok { 0%{box-shadow:0 0 0 0 rgba(34,150,90,0.4)} 70%{box-shadow:0 0 0 8px rgba(34,150,90,0)} 100%{box-shadow:0 0 0 0 rgba(34,150,90,0)} }
-.anim-ok { animation:pulse-ok 0.6s ease-out; }
-
-#color-popover { backdrop-filter:blur(8px); border:1px solid #e8e2d9; box-shadow:0 8px 30px rgba(80,50,30,0.15); }
+#code-panel::-webkit-scrollbar{width:6px}#code-panel::-webkit-scrollbar-thumb{background:#555;border-radius:3px}
+#color-popover { border:1px solid #e8e2d9; box-shadow:0 8px 30px rgba(80,50,30,0.15); }
+@media (min-width:1024px){ .lg-sticky{ position:sticky; top:108px; } }
 </style>
 </head>
 <body class="min-h-screen">
 
 <header class="bg-white border-b border-stone-200 sticky top-0 z-40" style="box-shadow:0 1px 8px rgba(100,70,40,0.07)">
-  <div class="max-w-[1400px] mx-auto px-6 py-3 flex items-center justify-between">
+  <div class="max-w-[1400px] mx-auto px-6 py-3 flex items-center justify-between gap-3">
     <div class="flex items-center gap-3">
       <img src="https://ik.imagekit.io/itssaturday/its-saturday-logo-300-100-1.png?updatedAt=1753622395304" alt="It's Saturday! Logo" class="h-8 object-contain">
-      <div class="flex items-center gap-2">
-        <h1 class="text-sm font-bold text-stone-800">It's Saturday! 工具總管</h1>
-        <span class="version-badge">2026.11月版本 · 無 &lt;center&gt;</span>
-      </div>
+      <h1 class="text-sm font-bold text-stone-800">It's Saturday! 工具總管</h1>
+      <span class="version-badge">2026.11 v3</span>
     </div>
-    <div class="flex items-center gap-2 text-xs text-stone-400">
-      <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse inline-block"></span>
-      單一檔案 · 無伺服器
+    <div id="save-status" class="text-xs text-stone-400 flex items-center gap-2">
+      <span class="w-2 h-2 rounded-full bg-emerald-400 inline-block"></span><span>草稿會自動保存在這台電腦</span>
     </div>
   </div>
-
-  <div class="max-w-[1400px] mx-auto px-6 pt-2 flex gap-4">
-      <button onclick="switchTab('generator')" id="tab-btn-generator" class="px-4 py-2.5 text-[13px] font-bold text-amber-700 border-b-2 border-amber-700 transition-colors">
-          ✨ HTML 產生器
-      </button>
-      <button onclick="switchTab('fixer')" id="tab-btn-fixer" class="px-4 py-2.5 text-[13px] font-bold text-stone-500 hover:text-stone-800 border-b-2 border-transparent transition-colors">
-          🔧 程式碼修復清理
-      </button>
+  <div class="max-w-[1400px] mx-auto px-6 pt-1 flex gap-4">
+    <button onclick="switchTab('generator')" id="tab-btn-generator">✨ HTML 產生器</button>
+    <button onclick="switchTab('fixer')" id="tab-btn-fixer">🔧 舊程式碼修復</button>
   </div>
 </header>
 
-<!-- ==========================================
-     Tab 1: HTML 產生器
-=========================================== -->
-<div id="tab-generator" class="max-w-[1400px] mx-auto px-6 py-5 block">
-  <div class="panel-card mb-5 p-4">
-    <div class="flex items-center justify-between mb-2.5">
-      <div class="flex items-center gap-2">
-        <span class="text-stone-400">📥</span>
-        <span class="section-label">匯入舊有 HTML 進行修改</span>
-      </div>
-      <span class="text-[11px] font-medium text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
-        ⚠️ 目前不支援列點功能，若貼上會無法偵測
-      </span>
+<!-- ============ Tab 1：產生器 ============ -->
+<div id="tab-generator" class="max-w-[1400px] mx-auto px-6 py-5">
+  <details class="panel-card mb-5 p-4 group">
+    <summary class="cursor-pointer select-none flex items-center gap-2 text-sm font-semibold text-stone-700">
+      📥 匯入官網現有 HTML 來修改 <span class="text-[11px] font-normal text-stone-400">（點開；支援標題、內文、列點、圖片，舊版含 &lt;center&gt; 的也可以）</span>
+    </summary>
+    <div class="flex gap-3 mt-3">
+      <textarea id="import-code" class="flex-1 bg-stone-50 border border-stone-200 text-[11px] font-mono p-2.5 rounded-lg h-24 resize-y field-focus text-stone-600"
+        placeholder="在 BVSHOP 編輯器切到「原始碼」模式，全選複製後貼在這裡…"></textarea>
+      <button onclick="importHTML()" class="btn-brand font-semibold text-xs px-5 rounded-lg shrink-0">⚡ 解析並載入</button>
     </div>
-    <div class="flex gap-3">
-      <textarea id="import-code"
-        class="flex-1 bg-stone-50 border border-stone-200 text-[11px] font-mono p-2.5 rounded-lg h-14 resize-none field-focus"
-        style="color:#555"
-        placeholder="貼上原本官網的 HTML 代碼（舊版含 <center> 的也可以），系統將自動解析並還原所有欄位…"></textarea>
-      <button onclick="importHTML()" class="btn-brand font-semibold text-xs px-5 rounded-lg shrink-0 whitespace-nowrap">
-        ⚡ 載入並自動優化
-      </button>
-    </div>
-  </div>
+  </details>
 
-  <div class="grid gap-5 items-start" style="grid-template-columns:380px 1fr 1fr">
-    <div class="panel-card p-5 flex flex-col gap-4">
-      <div class="p-3 rounded-xl" style="background:#fdf8f2;border:1px solid #ede0cc">
-        <p class="section-label mb-2">顯示組件</p>
-        <div class="flex gap-5 text-xs font-medium text-stone-600">
-          <label class="flex items-center gap-1.5 cursor-pointer select-none">
-            <input type="checkbox" id="toggle-bars" checked onchange="toggleSections()" class="accent-amber-700 w-3.5 h-3.5">
-            <span>📊 香氣組成比例</span>
-          </label>
-          <label class="flex items-center gap-1.5 cursor-pointer select-none">
-            <input type="checkbox" id="toggle-dots" checked onchange="toggleSections()" class="accent-amber-700 w-3.5 h-3.5">
-            <span>📍 特質標籤 (12選4)</span>
-          </label>
-        </div>
-      </div>
-
-      <div id="section-bars" onfocusin="hlPreview('bars')" onfocusout="unhlPreview('bars')">
-        <div class="flex justify-between items-center mb-2">
-          <p class="section-label">📊 香氣組成比例</p>
-          <span id="bar-total-badge" class="text-[10px] font-bold px-2 py-0.5 rounded-full transition-colors">加總 0%</span>
-        </div>
-        <div id="scent-list" class="row-card p-3 flex flex-col gap-2"></div>
-      </div>
-
-      <div id="section-dots" onfocusin="hlPreview('dots')" onfocusout="unhlPreview('dots')">
-        <div class="flex justify-between items-center mb-1.5">
-          <p class="section-label">📍 特質標籤落點 (請剛好選 4 個)</p>
-          <span id="tag-count-badge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-100 text-red-600">已選 0 個</span>
-        </div>
-        <div id="tag-matrix" class="grid grid-cols-2 gap-1.5 row-card p-2.5 max-h-[260px] overflow-y-auto"></div>
-      </div>
-
-      <div class="flex items-center gap-3">
-        <div class="h-px flex-1 bg-stone-100"></div>
-        <span class="section-label">📝 圖文排版序列</span>
-        <div class="h-px flex-1 bg-stone-100"></div>
+  <div class="grid gap-5 items-start grid-cols-1 lg:grid-cols-[400px_1fr_1fr]">
+    <!-- 編輯欄 -->
+    <div class="panel-card p-5 flex flex-col gap-3">
+      <div class="flex items-center justify-between">
+        <span class="section-label">📝 段落編排（由上到下）</span>
+        <button onclick="resetAll()" class="text-[11px] text-stone-400 hover:text-red-500">↺ 清空重來</button>
       </div>
 
       <div id="row-container" class="flex flex-col gap-2.5"></div>
 
-      <button onclick="addRow(); renderOutput();"
-        class="w-full border-2 border-dashed border-stone-300 hover:border-amber-500 hover:bg-amber-50 text-stone-400 hover:text-amber-700 py-3 rounded-xl text-xs font-semibold transition-all duration-200 cursor-pointer bg-white">
-        ＋ 新增圖文組件
-      </button>
-    </div>
-
-    <div class="panel-card p-5 sticky top-[108px]">
-      <div class="flex items-center justify-between mb-3">
-        <div class="flex items-center gap-2">
-          <span class="text-stone-400">👀</span>
-          <h2 class="text-sm font-bold text-stone-700">官網畫面模擬</h2>
+      <div class="rounded-xl p-2.5" style="background:#fdf8f2;border:1px dashed #d9c6ad">
+        <div class="text-[11px] text-stone-500 mb-2 font-semibold">＋ 新增段落</div>
+        <div class="grid grid-cols-4 gap-1.5">
+          <button class="chip" onclick="quickAdd('h3_gold')">大標</button>
+          <button class="chip" onclick="quickAdd('h4_brown')">標題</button>
+          <button class="chip" onclick="quickAdd('p_system')">內文</button>
+          <button class="chip" onclick="quickAdd('ul')">• 列點</button>
+          <button class="chip" onclick="quickAdd('ol')">1. 編號</button>
+          <button class="chip" onclick="quickAdd('img')">🖼 圖片</button>
+          <button class="chip" onclick="quickAdd('star')">✦ 分隔</button>
+          <button class="chip" onclick="quickAdd('br')">↕ 空行</button>
         </div>
-        <span class="text-[10px] text-stone-400 bg-stone-100 px-2 py-0.5 rounded-full">BVSHOP 寬度 800px · 預設靠左</span>
-      </div>
-      <!-- 預覽區刻意設為靠左，模擬 BVSHOP 編輯器預設，確保置中是靠每個元素自己的 text-align -->
-      <div id="preview-scroll" class="preview-bg rounded-xl border border-stone-200 overflow-y-auto flex justify-center" style="max-height:calc(100vh - 180px);min-height:300px">
-        <div id="preview-area" class="w-full max-w-[500px]" style="text-align:left;padding:20px 0px"></div>
       </div>
     </div>
 
-    <div class="panel-card p-5 flex flex-col sticky top-[108px]">
+    <!-- 預覽 -->
+    <div class="panel-card p-5 lg-sticky">
       <div class="flex items-center justify-between mb-3">
-        <div class="flex items-center gap-2">
-          <span class="text-stone-400">💻</span>
-          <h2 class="text-sm font-bold text-stone-700">BVSHOP 代碼輸出</h2>
-        </div>
-        <button onclick="copyCode()" id="copy-btn" class="btn-brand text-xs font-semibold px-4 py-2 rounded-lg flex items-center gap-1.5 shadow-sm">
-          <span>📋</span><span>複製 HTML</span>
-        </button>
+        <h2 class="text-sm font-bold text-stone-700">👀 官網畫面模擬</h2>
+        <span class="text-[10px] text-stone-400 bg-stone-100 px-2 py-0.5 rounded-full">點預覽可跳到該段編輯</span>
       </div>
-      <div id="code-panel" class="rounded-xl border border-stone-800 overflow-auto p-4 select-all" style="background:#1e1e1e;height:calc(100vh - 200px);min-height:300px">
+      <div class="preview-bg rounded-xl border border-stone-200 overflow-y-auto flex justify-center" style="max-height:calc(100vh - 180px);min-height:300px">
+        <!-- 刻意靠左：模擬 BVSHOP 預設，確保置中來自每段自己的 text-align -->
+        <div id="preview-area" class="w-full max-w-[500px]" style="text-align:left;padding:24px 12px;color:#333;font-size:14px;line-height:1.7"></div>
+      </div>
+    </div>
+
+    <!-- 代碼 -->
+    <div class="panel-card p-5 flex flex-col lg-sticky">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-sm font-bold text-stone-700">💻 BVSHOP 代碼</h2>
+        <button onclick="copyCode()" id="copy-btn" class="btn-brand text-xs font-semibold px-4 py-2 rounded-lg">📋 複製 HTML</button>
+      </div>
+      <p class="text-[11px] text-stone-400 mb-2">貼到 BVSHOP 編輯器的「原始碼」模式，再切回一般模式儲存。</p>
+      <div id="code-panel" class="rounded-xl border border-stone-800 overflow-auto p-4" style="background:#1e1e1e;height:calc(100vh - 230px);min-height:300px">
         <pre id="code-highlighted" class="font-mono text-[11px] whitespace-pre-wrap break-all text-[#d4d4d4] leading-relaxed"></pre>
       </div>
       <textarea id="code-plain" class="hidden"></textarea>
@@ -212,66 +124,57 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helve
   </div>
 </div>
 
-<!-- ==========================================
-     Tab 2: 程式碼修復工具
-=========================================== -->
+<!-- ============ Tab 2：修復工具 ============ -->
 <div id="tab-fixer" class="max-w-[1400px] mx-auto px-6 py-5 hidden">
-    <div class="panel-card p-6 flex flex-col gap-6">
-        <div>
-            <h2 class="text-base font-bold text-stone-800 mb-1 flex items-center gap-2">✨ 一鍵程式碼清理與修復</h2>
-            <p class="text-sm text-stone-500">貼上舊的 HTML：會移除 Google 翻譯殘留（gtx-trans）、把 <code>-webkit-center</code> 改成 <code>center</code>，並把 <code>&lt;center&gt;</code> 拆掉、改成每個段落自己的 <code>text-align: center;</code>（BVSHOP 新版編輯器可接受的寫法）。</p>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-6 items-stretch">
-            <div class="flex flex-col gap-2">
-                <label class="section-label">貼上原始程式碼</label>
-                <textarea id="fixer-input" class="w-full flex-1 bg-stone-50 border border-stone-200 text-xs font-mono p-4 rounded-xl resize-none field-focus" placeholder="在此貼上需要修復的 HTML..." style="min-height: 400px;"></textarea>
-            </div>
-
-            <div class="flex flex-col justify-center items-center py-4">
-                <button onclick="runCodeFixer()" class="btn-brand font-bold text-sm px-6 py-4 rounded-xl flex flex-col items-center gap-2 shadow-lg hover:shadow-xl transition-all">
-                    <span>⚡ 執行修復</span>
-                    <span class="text-[10px] font-normal opacity-80">➔ 清理與優化</span>
-                </button>
-                <div id="fixer-report" class="text-[11px] text-stone-500 mt-3 text-center leading-relaxed"></div>
-            </div>
-
-            <div class="flex flex-col gap-2">
-                <div class="flex justify-between items-center">
-                    <label class="section-label">修復完成的程式碼</label>
-                    <button onclick="copyFixedCode()" class="text-xs bg-amber-50 text-amber-800 px-3 py-1 rounded-lg font-semibold cursor-pointer hover:bg-amber-100 border border-amber-200 transition-colors">
-                        📋 複製結果
-                    </button>
-                </div>
-                <textarea id="fixer-output" class="w-full flex-1 bg-white border border-amber-200 text-xs font-mono p-4 rounded-xl resize-none focus:outline-none focus:border-amber-400" readonly placeholder="修復後的結果會顯示在這裡..." style="min-height: 400px; box-shadow: inset 0 2px 8px rgba(0,0,0,0.02);"></textarea>
-            </div>
-        </div>
+  <div class="panel-card p-6 flex flex-col gap-5">
+    <div>
+      <h2 class="text-base font-bold text-stone-800 mb-1">✨ 一鍵清理舊程式碼</h2>
+      <p class="text-sm text-stone-500">貼上舊商品頁的 HTML：移除 Google 翻譯殘留、修正 <code>-webkit-center</code>、拆掉 <code>&lt;center&gt;</code> 改成每段各自置中；列點會變成「整塊置中、文字靠左」。</p>
     </div>
+    <div class="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-6 items-stretch">
+      <div class="flex flex-col gap-2">
+        <label class="section-label">貼上原始程式碼</label>
+        <textarea id="fixer-input" class="w-full flex-1 bg-stone-50 border border-stone-200 text-xs font-mono p-4 rounded-xl resize-none field-focus" style="min-height:400px" placeholder="在此貼上需要修復的 HTML..."></textarea>
+      </div>
+      <div class="flex flex-col justify-center items-center gap-3">
+        <button onclick="runCodeFixer()" class="btn-brand font-bold text-sm px-6 py-4 rounded-xl">⚡ 執行修復</button>
+        <button onclick="sendFixedToGenerator()" class="text-[11px] text-amber-800 underline">送到產生器繼續編輯 →</button>
+        <div id="fixer-report" class="text-[11px] text-stone-500 text-center leading-relaxed"></div>
+      </div>
+      <div class="flex flex-col gap-2">
+        <div class="flex justify-between items-center">
+          <label class="section-label">修復完成的程式碼</label>
+          <button onclick="copyFixedCode()" class="text-xs bg-amber-50 text-amber-800 px-3 py-1 rounded-lg font-semibold border border-amber-200 hover:bg-amber-100">📋 複製結果</button>
+        </div>
+        <textarea id="fixer-output" readonly class="w-full flex-1 bg-white border border-amber-200 text-xs font-mono p-4 rounded-xl resize-none focus:outline-none" style="min-height:400px" placeholder="修復後的結果會顯示在這裡..."></textarea>
+      </div>
+    </div>
+  </div>
 </div>
 
+<!-- 調色盤 -->
 <div id="color-popover" class="hidden absolute z-50 bg-white p-3 rounded-xl flex flex-col gap-2" style="width:220px">
   <div class="text-[11px] font-bold text-stone-600">選擇顏色：</div>
   <div id="swatch-grid" class="grid grid-cols-3 gap-1.5"></div>
-  <div class="pt-1.5 border-t border-stone-100">
-    <div class="flex items-center gap-1.5 mb-1.5">
-      <input type="color" id="free-color" oninput="pickColor(this.value)" class="w-7 h-7 rounded-lg border border-stone-200 cursor-pointer p-0.5 bg-white shadow-sm">
-      <span class="text-[10px] text-stone-400">自訂任意顏色</span>
-    </div>
-    <div class="flex items-center gap-2">
-      <div id="color-preview-dot" class="w-5 h-5 rounded-full border border-stone-300 shadow-sm shrink-0" style="background:#aa846a"></div>
-      <input type="text" id="color-hex" oninput="onHexInput(this.value)" class="flex-1 border border-stone-200 text-[11px] p-1 rounded-md text-center font-mono" value="#AA846A">
-    </div>
+  <div class="pt-1.5 border-t border-stone-100 flex items-center gap-2">
+    <input type="color" id="free-color" oninput="pickColor(this.value)" class="w-7 h-7 rounded-lg border border-stone-200 cursor-pointer p-0.5 bg-white">
+    <div id="color-preview-dot" class="w-5 h-5 rounded-full border border-stone-300 shrink-0"></div>
+    <input type="text" id="color-hex" oninput="onHexInput(this.value)" class="flex-1 min-w-0 border border-stone-200 text-[11px] p-1 rounded-md text-center font-mono">
   </div>
-  <button onclick="applyColor()" class="w-full btn-brand text-[11px] font-semibold py-1.5 rounded-lg">確定套用</button>
+  <div class="flex gap-1.5">
+    <button onclick="clearColor()" class="flex-1 border border-stone-200 text-stone-500 text-[11px] py-1.5 rounded-lg">用預設色</button>
+    <button onclick="applyColor()" class="flex-1 btn-brand text-[11px] font-semibold py-1.5 rounded-lg">確定套用</button>
+  </div>
 </div>
 
+<!-- 匯入確認 -->
 <div id="import-confirm" class="hidden fixed inset-0 z-50 flex items-center justify-center" style="background:rgba(0,0,0,0.45)">
   <div class="bg-white rounded-2xl p-6 shadow-2xl w-80">
     <div class="text-base font-bold text-stone-800 mb-1">📋 解析完成，請確認</div>
-    <p class="text-xs text-stone-500 mb-4">以下是偵測到的元素數量，確認正確後再載入。</p>
+    <p class="text-xs text-stone-500 mb-4">載入後會<b>取代</b>目前編輯中的內容。</p>
     <div id="import-summary" class="bg-stone-50 rounded-xl p-3 text-xs text-stone-700 flex flex-col gap-1.5 mb-4"></div>
     <div class="flex gap-2">
-      <button onclick="cancelImport()" class="flex-1 border border-stone-200 text-stone-600 text-xs font-semibold py-2 rounded-lg cursor-pointer hover:bg-stone-50">取消</button>
+      <button onclick="cancelImport()" class="flex-1 border border-stone-200 text-stone-600 text-xs font-semibold py-2 rounded-lg">取消</button>
       <button onclick="confirmImport()" class="flex-1 btn-brand text-xs font-semibold py-2 rounded-lg">✅ 確認載入</button>
     </div>
   </div>
@@ -280,729 +183,499 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helve
 <script>
 'use strict';
 
-// ═══════════════════════════════════════════════════════════
-//  共用小工具
-// ═══════════════════════════════════════════════════════════
-function toast(msg, bg) {
-    const t = document.createElement('div');
-    t.className = 'fixed bottom-6 right-6 z-50 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-lg';
-    t.style.background = bg || '#047857';
-    t.textContent = msg;
-    document.body.appendChild(t);
-    setTimeout(() => t.remove(), 2600);
-}
-
-// 複製文字：先用 Clipboard API，失敗時用「暫時可見」的 textarea 備援
-// （原版備援用的是 display:none 的 textarea，select() 會失敗）
-function copyText(text) {
-    if (navigator.clipboard && window.isSecureContext) {
-        return navigator.clipboard.writeText(text).catch(() => legacyCopy(text));
-    }
-    return Promise.resolve(legacyCopy(text));
-}
-function legacyCopy(text) {
-    const ta = document.createElement('textarea');
-    ta.value = text;
-    ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;';
-    document.body.appendChild(ta);
-    ta.select();
-    let ok = false;
-    try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
-    ta.remove();
-    if (!ok) throw new Error('copy failed');
-}
-
-// rgb(146, 107, 89) → #926b59（編輯器常把顏色轉成 rgb）
-function toHex(c) {
-    if (!c) return '';
-    c = c.trim().toLowerCase();
-    if (/^#[0-9a-f]{3}$/.test(c)) return '#' + c.slice(1).split('').map(x => x + x).join('');
-    if (/^#[0-9a-f]{6}$/.test(c)) return c;
-    const m = c.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
-    if (m) return '#' + [m[1], m[2], m[3]].map(x => Math.min(255, +x).toString(16).padStart(2, '0')).join('');
-    return c;
-}
-function isValidHex(c) { return /^#[0-9a-fA-F]{6}$/.test(c); }
-function escAttr(s) { return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;'); }
-
-// ═══════════════════════════════════════════════════════════
-//  頁籤切換
-// ═══════════════════════════════════════════════════════════
-const TAB_ON  = 'px-4 py-2.5 text-[13px] font-bold text-amber-700 border-b-2 border-amber-700 transition-colors';
-const TAB_OFF = 'px-4 py-2.5 text-[13px] font-bold text-stone-500 hover:text-stone-800 border-b-2 border-transparent transition-colors';
-function switchTab(name) {
-    const isGen = name === 'generator';
-    document.getElementById('tab-generator').classList.toggle('hidden', !isGen);
-    document.getElementById('tab-fixer').classList.toggle('hidden', isGen);
-    document.getElementById('tab-btn-generator').className = isGen ? TAB_ON : TAB_OFF;
-    document.getElementById('tab-btn-fixer').className = isGen ? TAB_OFF : TAB_ON;
-}
-
-// ═══════════════════════════════════════════════════════════
-//  程式碼修復工具
-// ═══════════════════════════════════════════════════════════
-const BLOCK_TAGS = new Set(['P','H1','H2','H3','H4','H5','H6','DIV','UL','OL','TABLE','BLOCKQUOTE','FIGURE','SECTION','HR','PRE']);
-
-// 只改字串，不經過 el.style（避免瀏覽器把 #caa379 改寫成 rgb()）
-function addTextAlignCenter(el) {
-    const s = el.getAttribute('style') || '';
-    if (/text-align\s*:/i.test(s)) return false;  // 已有對齊就尊重原本設定
-    el.setAttribute('style', ('text-align: center; ' + s).trim());
-    return true;
-}
-
-function runCodeFixer() {
-    const input = document.getElementById('fixer-input').value;
-    if (!input.trim()) { alert('請先在左側貼上需要修復的程式碼！'); return; }
-
-    // 用 <template> 解析：不會真的去載入圖片或執行腳本
-    const tpl = document.createElement('template');
-    tpl.innerHTML = input;
-    const root = tpl.content;
-    const report = { gtx: 0, webkit: 0, center: 0, align: 0 };
-
-    // 1. 移除 Google 翻譯殘留
-    root.querySelectorAll('#gtx-trans, .gtx-trans-icon').forEach(el => { el.remove(); report.gtx++; });
-
-    // 2. -webkit-center → center（只改 style 屬性）
-    root.querySelectorAll('[style]').forEach(el => {
-        const s = el.getAttribute('style');
-        if (s.includes('-webkit-center')) { el.setAttribute('style', s.replace(/-webkit-center/g, 'center')); report.webkit++; }
-    });
-
-    // 3. 舊式 align="center" 屬性 → style
-    root.querySelectorAll('[align]').forEach(el => {
-        if (el.tagName === 'IMG') return;
-        const a = el.getAttribute('align').toLowerCase();
-        el.removeAttribute('align');
-        const s = el.getAttribute('style') || '';
-        if (!/text-align\s*:/i.test(s)) el.setAttribute('style', (`text-align: ${a}; ` + s).trim());
-        report.align++;
-    });
-
-    // 4. 拆掉 <center>，置中改寫在每個區塊自己身上；散落的文字/圖片包進 <p>
-    let list;
-    while ((list = root.querySelectorAll('center')).length) {
-        const c = list[list.length - 1];
-        const frag = document.createDocumentFragment();
-        let buf = null;
-        const flush = () => {
-            if (buf && buf.textContent.trim() === '' && !buf.querySelector('img,br')) { buf = null; return; }
-            if (buf) { addTextAlignCenter(buf); frag.appendChild(buf); buf = null; }
-        };
-        [...c.childNodes].forEach(n => {
-            if (n.nodeType === 1 && BLOCK_TAGS.has(n.tagName)) {
-                flush(); addTextAlignCenter(n); frag.appendChild(n);
-            } else if (n.nodeType === 3 && !n.textContent.trim() && !buf) {
-                frag.appendChild(n);
-            } else if (n.nodeType === 1 && n.tagName === 'BR' && !buf) {
-                // 區塊之間單獨的 <br>：直接丟掉，避免產生空白段落
-            } else {
-                if (!buf) buf = document.createElement('p');
-                buf.appendChild(n);
-            }
-        });
-        flush();
-        c.replaceWith(frag);
-        report.center++;
-    }
-
-    const holder = document.createElement('div');
-    holder.appendChild(root);
-    let out = holder.innerHTML;
-
-    // 5. 排版：每個區塊一行，好讀好比對
-    out = out.replace(/>\s*(<(?:p|h[1-6]|div|img)[\s>])/gi, '>\n$1');
-    out = out.replace(/<br\s*\/?>\s*/gi, '<br />\n');
-    out = out.replace(/\n{3,}/g, '\n\n').trim();
-
-    document.getElementById('fixer-output').value = out;
-    document.getElementById('fixer-report').innerHTML =
-        `移除翻譯殘留 ${report.gtx} 處<br>修正 -webkit-center ${report.webkit} 處<br>拆除 &lt;center&gt; ${report.center} 個<br>轉換 align 屬性 ${report.align} 處`;
-}
-
-function copyFixedCode() {
-    const v = document.getElementById('fixer-output').value;
-    if (!v) return;
-    copyText(v).then(() => toast('📋 修復後的程式碼已複製！', '#d97706'))
-               .catch(() => alert('複製失敗，請手動全選複製'));
-}
-
-// ═══════════════════════════════════════════════════════════
-//  全域狀態與配置
-// ═══════════════════════════════════════════════════════════
-let rowCount       = 0;
-let activePickerId = null;
-let pendingImport  = null;
-let activeHl       = null;   // 目前正在編輯的預覽區塊（重繪後要補回發光框）
-
-const C_H3   = '#caa379';
-const C_STAR = '#caa379';
-const C_H4   = '#926b59';
-const ALIGN  = 'text-align: center;';
-
+// ═══════════════ 設定 ═══════════════
+const C_H3 = '#caa379', C_STAR = '#caa379', C_H4 = '#926b59';
+const ALIGN = 'text-align: center;';
+// 列點：display: table + margin auto → 整塊置中、寬度只包住內容；text-align: left → 每點靠左對齊
+const LIST_STYLE = { ul: 'display: table; margin: 0 auto; padding-left: 1.5em; text-align: left; list-style-type: disc;',
+                     ol: 'display: table; margin: 0 auto; padding-left: 1.5em; text-align: left; list-style-type: decimal;' };
 const SWATCHES = ['#aa846a','#887f6b','#313421','#c89e81','#a09c88','#ebaf9b','#c1e6ee','#f5bc82','#f09637'];
+const STORE_KEY = 'its-saturday-bvshop-v3';
 
-const SCENT_LIBRARY = {
-    1: { label: '木質香', color: '#675b53' },
-    2: { label: '花香',   color: '#c49281' },
-    3: { label: '草本香', color: '#877751' },
-    4: { label: '果香',   color: '#d1b277' },
-    5: { label: '奶香',   color: '#ddcaba' },
-    6: { label: '海洋香', color: '#749198' }
+const TYPES = {
+    h3_gold:  { label:'大標 h3 · 金色',  ph:'請輸入大標題文字…', color:false },
+    h4_brown: { label:'標題 h4',         ph:'請輸入標題文字…',   color:true },
+    p_system: { label:'內文 p',          ph:'請輸入內文段落…（Enter 換行）', color:true },
+    ul:       { label:'• 列點清單',      ph:'一行一點，例如：\n前調：佛手柑\n中調：玫瑰\n後調：雪松', color:true },
+    ol:       { label:'1. 編號清單',     ph:'一行一點，會自動編號', color:true },
+    img:      { label:'🖼 圖片',          ph:'請貼上完整的圖片網址（https://…）', color:false },
+    star:     { label:'✦ 分隔符號',      ph:'', color:false, locked:'✦' },
+    br:       { label:'↕ 空行間距',      ph:'🔒 空行間距', color:false, locked:'' },
 };
-const SCENT_DEFAULT = { 1: 60, 2: 30, 4: 10 };
-
-const ICON_BASE = 'https://ik.imagekit.io/itssaturday/product%20detail/ICON/';
-const CHARACTER_TAGS = [
-    { id: 't1',  label: '溫慢安定',   bg: '#dcc9b9', icon: ICON_BASE + 'web-icon-02.png' },
-    { id: 't2',  label: '優雅浪漫',   bg: '#e5afa1', icon: ICON_BASE + 'web-icon-03.png' },
-    { id: 't3',  label: '週末小確幸', bg: '#addeff', icon: ICON_BASE + 'web-icon-04.png' },
-    { id: 't4',  label: '客廳使用',   bg: '#e0ccbf', icon: ICON_BASE + 'web-icon-05.png' },
-    { id: 't5',  label: '安全牌送禮', bg: '#d0b177', icon: ICON_BASE + 'web-icon-06.png' },
-    { id: 't6',  label: '中性魅力',   bg: '#b2d5db', icon: ICON_BASE + 'web-icon-07.png' },
-    { id: 't7',  label: '一個人時光', bg: '#efebc5', icon: ICON_BASE + 'web-icon-08.png' },
-    { id: 't8',  label: '房間使用',   bg: '#d3d3b2', icon: ICON_BASE + 'web-icon-09.png' },
-    { id: 't9',  label: '季節限定',   bg: '#ffc554', icon: ICON_BASE + 'web-icon-10.png' },
-    { id: 't10', label: 'SPA使用',    bg: '#e2c3a1', icon: ICON_BASE + 'web-icon-11.png' },
-    { id: 't11', label: '上班適合',   bg: '#d0b177', icon: ICON_BASE + 'web-icon-12.png' },
-    { id: 't12', label: '提神清新',   bg: '#cec4ae', icon: ICON_BASE + 'web-icon-13.png' }
-];
 
 const DEFAULT_LAYOUT = [
     { type:'h3_gold',  text:'溫慢木質香氛' },
     { type:'star',     text:'' },
     { type:'h4_brown', text:'香調描述標題' },
     { type:'p_system', text:"在這裡輸入您的香氛品牌故事與產品描述文案，讓每一段文字都散發出 It's Saturday! 的獨特氣息。" },
+    { type:'ul',       text:'前調：佛手柑、粉紅胡椒\n中調：玫瑰、茉莉\n後調：雪松、琥珀' },
     { type:'br',       text:'' },
     { type:'img',      text:'' },
 ];
 
-function init() {
-    buildScentList();
-    buildTagMatrix();
-    buildSwatches();
-    DEFAULT_LAYOUT.forEach(r => addRow(r.type, r.text, ''));
-    ['t1','t2','t3','t5'].forEach(id => document.getElementById(`chk-tag-${id}`).checked = true);
-    updateTagCount();
-    validateAndRenderBars();
+let rowCount = 0, activePickerId = null, pendingImport = null, activeHl = null;
+
+// ═══════════════ 小工具 ═══════════════
+function toast(msg, bg) {
+    const t = document.createElement('div');
+    t.className = 'fixed bottom-6 right-6 z-50 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-lg';
+    t.style.background = bg || '#047857'; t.textContent = msg;
+    document.body.appendChild(t); setTimeout(() => t.remove(), 2600);
+}
+function copyText(text) {
+    if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(text).catch(() => legacyCopy(text));
+    return Promise.resolve().then(() => legacyCopy(text));
+}
+function legacyCopy(text) {
+    const ta = document.createElement('textarea'); ta.value = text;
+    ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;'; document.body.appendChild(ta); ta.select();
+    let ok = false; try { ok = document.execCommand('copy'); } catch (e) {}
+    ta.remove(); if (!ok) throw new Error('copy failed');
+}
+function toHex(c) {
+    if (!c) return ''; c = c.trim().toLowerCase();
+    if (/^#[0-9a-f]{3}$/.test(c)) return '#' + c.slice(1).split('').map(x => x + x).join('');
+    if (/^#[0-9a-f]{6}$/.test(c)) return c;
+    const m = c.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+    return m ? '#' + [m[1],m[2],m[3]].map(x => Math.min(255,+x).toString(16).padStart(2,'0')).join('') : c;
+}
+const isValidHex = c => /^#[0-9a-fA-F]{6}$/.test(c);
+const escAttr = s => String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+function autoGrow(ta) { ta.style.height = 'auto'; ta.style.height = Math.max(44, ta.scrollHeight + 2) + 'px'; }
+
+// ═══════════════ 頁籤 ═══════════════
+const TAB_ON  = 'px-4 py-2.5 text-[13px] font-bold text-amber-700 border-b-2 border-amber-700';
+const TAB_OFF = 'px-4 py-2.5 text-[13px] font-bold text-stone-500 hover:text-stone-800 border-b-2 border-transparent';
+function switchTab(name) {
+    const g = name === 'generator';
+    document.getElementById('tab-generator').classList.toggle('hidden', !g);
+    document.getElementById('tab-fixer').classList.toggle('hidden', g);
+    document.getElementById('tab-btn-generator').className = g ? TAB_ON : TAB_OFF;
+    document.getElementById('tab-btn-fixer').className = g ? TAB_OFF : TAB_ON;
 }
 
-// ═══════════════════════════════════════════════════════════
-//  香氣 / 標籤 / 色票 UI
-// ═══════════════════════════════════════════════════════════
-function buildScentList() {
-    const ids = Object.keys(SCENT_LIBRARY);
-    document.getElementById('scent-list').innerHTML = ids.map((id, i) => {
-        const s = SCENT_LIBRARY[id]; const v = SCENT_DEFAULT[id] || 0; const on = v > 0;
-        const last = i === ids.length - 1;
-        return `<div class="flex items-center justify-between text-xs ${last ? '' : 'border-b border-stone-100 pb-1.5'}">
-          <label class="flex items-center gap-2 cursor-pointer font-medium text-stone-700">
-            <input type="checkbox" id="chk-scent-${id}" ${on ? 'checked' : ''} onchange="onScentToggle(${id})" class="accent-amber-700 w-3.5 h-3.5">
-            <span class="w-3 h-3 rounded-full inline-block" style="background:${s.color}"></span><span>${s.label}</span>
-          </label>
-          <div class="flex items-center gap-1">
-            <input type="number" min="0" max="100" id="val-scent-${id}" value="${v}" oninput="validateAndRenderBars()">
-            <span class="text-stone-400">%</span>
-          </div>
-        </div>`;
-    }).join('');
-    ids.forEach(id => setScentInputState(id));
+// ═══════════════ 修復工具 ═══════════════
+const BLOCK_TAGS = new Set(['P','H1','H2','H3','H4','H5','H6','DIV','UL','OL','TABLE','BLOCKQUOTE','FIGURE','SECTION','HR','PRE']);
+function setStyleProp(el, prop, value, force) {
+    const s = el.getAttribute('style') || '';
+    const re = new RegExp('(^|;)\\s*' + prop + '\\s*:[^;]*;?', 'i');
+    if (re.test(s)) { if (!force) return; el.setAttribute('style', s.replace(re, `$1 ${prop}: ${value};`).trim()); }
+    else el.setAttribute('style', (`${prop}: ${value}; ` + s).trim());
 }
-function setScentInputState(id) {
-    const on = document.getElementById(`chk-scent-${id}`).checked;
-    const inp = document.getElementById(`val-scent-${id}`);
-    inp.disabled = !on;
-    inp.className = on
-        ? 'w-12 border border-stone-200 rounded-md p-1 text-center bg-white field-focus'
-        : 'w-12 border border-stone-100 text-stone-300 rounded-md p-1 text-center bg-stone-50';
-}
-
-function buildTagMatrix() {
-    document.getElementById('tag-matrix').innerHTML = CHARACTER_TAGS.map(t => `
-        <label class="flex items-center gap-2 bg-white p-1.5 rounded-lg border border-stone-200 cursor-pointer hover:bg-stone-50 select-none transition-all">
-          <input type="checkbox" id="chk-tag-${t.id}" value="${t.id}" onchange="onTagSelectChange(this)" class="accent-amber-700 w-3.5 h-3.5">
-          <img src="${t.icon}" class="w-5 h-5 object-contain opacity-75" alt="">
-          <span class="text-xs font-medium text-stone-700">${t.label}</span>
-        </label>`).join('');
-}
-
-function buildSwatches() {
-    document.getElementById('swatch-grid').innerHTML = SWATCHES.map(c => `
-    <button onclick="pickColor('${c}')" class="flex flex-col items-center gap-1 p-1.5 rounded-lg hover:bg-stone-50 border border-transparent hover:border-stone-200 cursor-pointer transition-all group">
-      <div class="w-8 h-8 rounded-full shadow-sm group-hover:scale-110 transition-transform" style="background:${c}"></div>
-      <span class="text-[9px] font-mono text-stone-400">${c}</span>
-    </button>`).join('');
-}
-
-function onTagSelectChange(checkbox) {
-    const n = document.querySelectorAll('#tag-matrix input:checked').length;
-    if (n > 4) { checkbox.checked = false; alert('❌ 特質標籤最多只能選擇 4 個喔！'); return; }
-    updateTagCount();
-    renderOutput();
-}
-function updateTagCount() {
-    const n = document.querySelectorAll('#tag-matrix input:checked').length;
-    const b = document.getElementById('tag-count-badge');
-    b.textContent = `已選 ${n} 個`;
-    b.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full ' + (n === 4 ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-red-600');
-}
-
-function toggleSections() {
-    document.getElementById('section-bars').style.display = document.getElementById('toggle-bars').checked ? 'block' : 'none';
-    document.getElementById('section-dots').style.display = document.getElementById('toggle-dots').checked ? 'block' : 'none';
-    renderOutput();
-}
-
-function onScentToggle(id) {
-    const chk = document.getElementById(`chk-scent-${id}`);
-    const inp = document.getElementById(`val-scent-${id}`);
-    if (chk.checked) { if ((parseInt(inp.value) || 0) === 0) inp.value = 10; }
-    else inp.value = 0;
-    setScentInputState(id);
-    validateAndRenderBars();
-}
-
-function validateAndRenderBars() {
-    let total = 0;
-    for (let i = 1; i <= 6; i++) {
-        if (!document.getElementById(`chk-scent-${i}`).checked) continue;
-        const inp = document.getElementById(`val-scent-${i}`);
-        let v = parseInt(inp.value) || 0;
-        // 限制在 0–100，避免輸出負數或超過 100% 的 flex
-        if (v < 0 || v > 100) { v = Math.max(0, Math.min(100, v)); inp.value = v; }
-        total += v;
+function centerBlock(el) {
+    if (el.tagName === 'UL' || el.tagName === 'OL') {
+        // 列點：整塊置中、文字靠左（覆寫原本的置中）
+        const keep = (el.getAttribute('style') || '').replace(/(^|;)\s*(text-align|display|margin[a-z-]*|padding-left|list-style-type)\s*:[^;]*;?/gi, '$1').replace(/^[;\s]+/, '').trim();
+        el.setAttribute('style', (LIST_STYLE[el.tagName.toLowerCase()] + ' ' + keep).trim());
+        el.querySelectorAll('li[style]').forEach(li => {
+            const s = li.getAttribute('style').replace(/(^|;)\s*text-align\s*:[^;]*;?/gi, '$1').replace(/^[;\s]+/, '').trim();
+            s ? li.setAttribute('style', s) : li.removeAttribute('style');
+        });
+        return;
     }
-    const b = document.getElementById('bar-total-badge');
-    b.textContent = `加總 ${total}%`;
-    b.className = total === 100
-        ? 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800'
-        : 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-100 text-red-600 animate-pulse';
+    setStyleProp(el, 'text-align', 'center', false);
+}
+
+function runCodeFixer() {
+    const input = document.getElementById('fixer-input').value;
+    if (!input.trim()) { alert('請先在左側貼上需要修復的程式碼！'); return; }
+    const tpl = document.createElement('template'); tpl.innerHTML = input;
+    const root = tpl.content;
+    const r = { gtx:0, webkit:0, center:0, align:0, list:0 };
+
+    root.querySelectorAll('#gtx-trans, .gtx-trans-icon').forEach(el => { el.remove(); r.gtx++; });
+    root.querySelectorAll('[style]').forEach(el => {
+        const s = el.getAttribute('style');
+        if (s.includes('-webkit-center')) { el.setAttribute('style', s.replace(/-webkit-center/g, 'center')); r.webkit++; }
+    });
+    root.querySelectorAll('[align]').forEach(el => {
+        if (el.tagName === 'IMG') return;
+        const a = el.getAttribute('align').toLowerCase(); el.removeAttribute('align');
+        setStyleProp(el, 'text-align', a, false); r.align++;
+    });
+
+    // 拆 <center>
+    let list;
+    while ((list = root.querySelectorAll('center')).length) {
+        const c = list[list.length - 1];
+        const frag = document.createDocumentFragment(); let buf = null;
+        const flush = () => {
+            if (buf && !buf.textContent.trim() && !buf.querySelector('img')) { buf = null; return; }
+            if (buf) { setStyleProp(buf, 'text-align', 'center', false); frag.appendChild(buf); buf = null; }
+        };
+        [...c.childNodes].forEach(n => {
+            if (n.nodeType === 1 && BLOCK_TAGS.has(n.tagName)) { flush(); centerBlock(n); frag.appendChild(n); }
+            else if (n.nodeType === 3 && !n.textContent.trim() && !buf) frag.appendChild(n);
+            else if (n.nodeType === 1 && n.tagName === 'BR' && !buf) { /* 區塊間多餘的 br */ }
+            else { if (!buf) buf = document.createElement('p'); buf.appendChild(n); }
+        });
+        flush(); c.replaceWith(frag); r.center++;
+    }
+
+    // 被編輯器「全選置中」過的列點：ul/ol 或 li 上有 text-align:center → 改成整塊置中、文字靠左
+    root.querySelectorAll('ul, ol').forEach(l => {
+        const centered = /text-align\s*:\s*center/i.test(l.getAttribute('style') || '') ||
+                         [...l.querySelectorAll('li')].some(li => /text-align\s*:\s*center/i.test(li.getAttribute('style') || ''));
+        if (centered) { centerBlock(l); r.list++; }
+    });
+
+    const holder = document.createElement('div'); holder.appendChild(root);
+    let out = holder.innerHTML;
+    out = out.replace(/>\s*(<(?:p|h[1-6]|div|img|ul|ol|li)[\s>])/gi, '>\n$1')
+             .replace(/>\s*(<\/(?:ul|ol)>)/gi, '>\n$1')
+             .replace(/<br\s*\/?>\s*/gi, '<br />\n')
+             .replace(/(<p[^>]*>)\n/gi, '$1')
+             .replace(/\n{3,}/g, '\n\n').trim();
+
+    document.getElementById('fixer-output').value = out;
+    document.getElementById('fixer-report').innerHTML =
+        `移除翻譯殘留 ${r.gtx}　修正 -webkit-center ${r.webkit}<br>拆除 &lt;center&gt; ${r.center}　轉換 align ${r.align}<br>修正置中列點 ${r.list}`;
+}
+function copyFixedCode() {
+    const v = document.getElementById('fixer-output').value; if (!v) return;
+    copyText(v).then(() => toast('📋 修復後的程式碼已複製！', '#d97706')).catch(() => alert('複製失敗，請手動全選複製'));
+}
+function sendFixedToGenerator() {
+    const v = document.getElementById('fixer-output').value || document.getElementById('fixer-input').value;
+    if (!v.trim()) { alert('請先貼上程式碼'); return; }
+    document.getElementById('import-code').value = v;
+    switchTab('generator'); importHTML();
+}
+
+// ═══════════════ 初始化 ═══════════════
+function init() {
+    switchTab('generator');
+    document.getElementById('swatch-grid').innerHTML = SWATCHES.map(c => `
+      <button onclick="pickColor('${c}')" class="flex flex-col items-center gap-1 p-1.5 rounded-lg hover:bg-stone-50 border border-transparent hover:border-stone-200">
+        <div class="w-8 h-8 rounded-full shadow-sm" style="background:${c}"></div>
+        <span class="text-[9px] font-mono text-stone-400">${c}</span>
+      </button>`).join('');
+    const saved = loadDraft();
+    (saved && saved.length ? saved : DEFAULT_LAYOUT).forEach(r => addRow(r.type, r.text, r.color));
+    renderOutput();
+    if (saved && saved.length) toast('已還原上次的草稿', '#7a5c44');
+}
+
+// ═══════════════ 草稿自動保存 ═══════════════
+function collectRows() {
+    return [...document.getElementById('row-container').children].map(row => ({
+        type: row.querySelector('.type-select').value,
+        text: row.querySelector('.text-input').value,
+        color: row.querySelector('.color-toggle').checked ? row.querySelector('.color-val').value : ''
+    }));
+}
+let saveTimer = null;
+function saveDraft() {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => { try { localStorage.setItem(STORE_KEY, JSON.stringify(collectRows())); } catch (e) {} }, 400);
+}
+function loadDraft() { try { return JSON.parse(localStorage.getItem(STORE_KEY) || 'null'); } catch (e) { return null; } }
+function resetAll() {
+    if (!confirm('確定要清空目前所有段落，回到範本嗎？')) return;
+    try { localStorage.removeItem(STORE_KEY); } catch (e) {}
+    document.getElementById('row-container').innerHTML = ''; rowCount = 0;
+    DEFAULT_LAYOUT.forEach(r => addRow(r.type, r.text, ''));
     renderOutput();
 }
 
-// ═══════════════════════════════════════════════════════════
-//  圖文列
-// ═══════════════════════════════════════════════════════════
-function addRow(type, text, color, afterId) {
-    type = type || 'p_system'; text = text || ''; color = toHex(color || '');
-    rowCount++; const idx = rowCount; const rowId = 'row-' + idx;
-    // 只跳脫 <，避免內容裡出現 </textarea> 把介面弄壞；<strong> 等仍可正常顯示與編輯
-    const rawText = text.replace(/<br\s*\/?>\s*\n?/gi, '\n').replace(/</g, '&lt;');
-    const colorChecked = (color && color !== C_H4) ? 'checked' : '';
-    const resolvedColor = isValidHex(color) ? color : C_H4;
+// ═══════════════ 段落列 ═══════════════
+function quickAdd(type) {
+    const id = addRow(type, '', '');
+    renderOutput();
+    const row = document.getElementById(id);
+    row.scrollIntoView({ block:'nearest', behavior:'smooth' });
+    const ta = row.querySelector('.text-input'); if (!ta.disabled) ta.focus();
+}
 
-    const rowHtml = `<div id="${rowId}" data-index="${idx}" draggable="false" class="draggable-row row-card flex flex-col gap-2 p-3 relative">
-  <div class="flex items-center justify-between gap-1.5">
-    <div class="flex items-center gap-1.5 flex-1 min-w-0">
-      <div class="row-num">${idx}</div>
-      <span class="drag-handle text-stone-300 cursor-grab px-0.5 select-none text-sm hover:text-stone-500 shrink-0">⠿</span>
-      <select onchange="onTypeChange('${rowId}')" class="type-select bg-white border border-stone-200 text-[11px] rounded-lg px-2 py-1 font-medium text-stone-700 field-focus min-w-0 flex-1">
-        <option value="h3_gold"  ${type==='h3_gold'  ?'selected':''}>超大標 h3 · 金色</option>
-        <option value="h4_brown" ${type==='h4_brown' ?'selected':''}>標題 h4 · 自訂色</option>
-        <option value="p_system" ${type==='p_system' ?'selected':''}>內文 p · 自訂色</option>
-        <option value="img"      ${type==='img'      ?'selected':''}>插入圖片 img</option>
-        <option value="star"     ${type==='star'     ?'selected':''}>✦ 分隔符號</option>
-        <option value="br"       ${type==='br'       ?'selected':''}>空行間距</option>
-      </select>
+function addRow(type, text, color, afterId) {
+    type = TYPES[type] ? type : 'p_system'; text = text || ''; color = toHex(color || '');
+    rowCount++; const idx = rowCount; const rowId = 'row-' + idx;
+    const rawText = text.replace(/<br\s*\/?>\s*\n?/gi, '\n').replace(/</g, '&lt;');
+    const colorOn = isValidHex(color) && color !== C_H4;
+    const resolved = isValidHex(color) ? color : C_H4;
+    const opts = Object.entries(TYPES).map(([k, v]) => `<option value="${k}" ${k === type ? 'selected' : ''}>${v.label}</option>`).join('');
+
+    const html = `<div id="${rowId}" data-index="${idx}" draggable="false" class="draggable-row row-card flex flex-col gap-2 p-3">
+  <div class="flex items-center gap-1.5">
+    <div class="row-num">${idx}</div>
+    <span class="drag-handle text-stone-300 cursor-grab select-none text-sm hover:text-stone-500" title="拖曳排序">⠿</span>
+    <select onchange="onTypeChange('${rowId}')" class="type-select bg-white border border-stone-200 text-[11px] rounded-lg px-2 py-1 font-medium text-stone-700 field-focus min-w-0 flex-1">${opts}</select>
+    <div class="color-picker-wrap items-center gap-1 bg-white border border-stone-200 rounded-lg px-1.5 py-0.5 shrink-0" title="文字顏色">
+      <input type="checkbox" class="color-toggle hidden" ${colorOn ? 'checked' : ''}>
+      <button onclick="openColorPicker(this,'${rowId}')" class="color-trigger flex items-center gap-1 text-[11px] text-stone-500 cursor-pointer">🎨<span class="color-swatch w-3.5 h-3.5 rounded-full border border-stone-300 inline-block pointer-events-none"></span></button>
+      <input type="hidden" class="color-val" value="${resolved}">
     </div>
-    <div class="color-picker-wrap flex items-center gap-1.5 bg-white border border-stone-200 rounded-lg px-2 py-1 shadow-sm shrink-0">
-      <input type="checkbox" class="color-toggle accent-amber-700 cursor-pointer w-3 h-3" ${colorChecked} onchange="renderOutput()">
-      <button onclick="openColorPicker(this,'${rowId}')" class="color-trigger text-base leading-none cursor-pointer hover:scale-110 transition-transform select-none shrink-0" title="選擇顏色">🎨</button>
-      <span class="color-swatch w-3 h-3 rounded-full border border-stone-300 inline-block" style="background:${resolvedColor}"></span>
-      <input type="hidden" class="color-val" value="${resolvedColor}">
-    </div>
-    <div class="flex items-center gap-1 shrink-0">
-      <button onclick="moveRow('${rowId}',-1)" class="text-[10px] bg-white border border-stone-200 px-1.5 py-0.5 rounded-md text-stone-500">▲</button>
-      <button onclick="moveRow('${rowId}',1)"  class="text-[10px] bg-white border border-stone-200 px-1.5 py-0.5 rounded-md text-stone-500">▼</button>
-      <button onclick="dupRow('${rowId}')" class="text-[10px] bg-amber-50 text-amber-800 px-2 py-0.5 rounded-md font-semibold">複製</button>
-      <button onclick="delRow('${rowId}')" class="text-stone-300 hover:text-red-500 px-1 text-sm">✕</button>
+    <div class="flex items-center gap-0.5 shrink-0">
+      <button onclick="moveRow('${rowId}',-1)" class="text-[10px] bg-white border border-stone-200 px-1.5 py-0.5 rounded-md text-stone-500" title="上移">▲</button>
+      <button onclick="moveRow('${rowId}',1)"  class="text-[10px] bg-white border border-stone-200 px-1.5 py-0.5 rounded-md text-stone-500" title="下移">▼</button>
+      <button onclick="dupRow('${rowId}')" class="text-[10px] bg-amber-50 text-amber-800 px-1.5 py-0.5 rounded-md font-semibold" title="複製這段">複製</button>
+      <button onclick="delRow('${rowId}')" class="text-stone-300 hover:text-red-500 px-1 text-sm" title="刪除">✕</button>
     </div>
   </div>
-  <textarea oninput="renderOutput()" onfocus="hlPreview(${idx})" onblur="unhlPreview(${idx})"
-    class="text-input w-full bg-white border border-stone-200 text-xs rounded-lg p-2.5 text-stone-700 min-h-[44px] field-focus resize-none leading-relaxed"
-    placeholder="請輸入內容">${rawText}</textarea>
+  <textarea oninput="autoGrow(this); renderOutput()" onfocus="hlPreview(${idx})" onblur="unhlPreview(${idx})"
+    class="text-input w-full bg-white border border-stone-200 text-xs rounded-lg p-2.5 text-stone-700 field-focus resize-none leading-relaxed" rows="1">${rawText}</textarea>
+  <div class="row-hint text-[10px] text-stone-400 hidden"></div>
 </div>`;
-
-    const container = document.getElementById('row-container');
-    if (afterId) document.getElementById(afterId).insertAdjacentHTML('afterend', rowHtml);
-    else container.insertAdjacentHTML('beforeend', rowHtml);
-    applyTypeUI(rowId);
-    setupDrag();
+    const c = document.getElementById('row-container');
+    if (afterId) document.getElementById(afterId).insertAdjacentHTML('afterend', html);
+    else c.insertAdjacentHTML('beforeend', html);
+    applyTypeUI(rowId); setupDrag();
+    return rowId;
 }
 
 function onTypeChange(rowId) { applyTypeUI(rowId); renderOutput(); }
 function applyTypeUI(rowId) {
     const row = document.getElementById(rowId);
+    const type = row.querySelector('.type-select').value; const T = TYPES[type];
+    const ta = row.querySelector('.text-input'); const cp = row.querySelector('.color-picker-wrap');
+    const hint = row.querySelector('.row-hint');
+    ta.disabled = false; ta.classList.remove('bg-stone-100');
+    if (ta.value === '✦' && type !== 'star') ta.value = '';
+    if ('locked' in T) { ta.value = T.locked; ta.disabled = true; ta.classList.add('bg-stone-100'); }
+    ta.placeholder = T.ph;
+    cp.style.display = T.color ? 'flex' : 'none';
+    updateSwatch(row);
+    if (type === 'ul' || type === 'ol') { hint.textContent = '一行 = 一點。整塊會置中，每點文字靠左對齊。'; hint.classList.remove('hidden'); }
+    else hint.classList.add('hidden');
+    autoGrow(ta);
+}
+function updateSwatch(row) {
+    const on = row.querySelector('.color-toggle').checked;
     const type = row.querySelector('.type-select').value;
-    const ta = row.querySelector('.text-input');
-    const cp = row.querySelector('.color-picker-wrap');
-    ta.disabled = false; ta.classList.remove('bg-stone-100'); cp.style.display = 'none';
-    // 從「分隔符號」切回文字類型時，清掉殘留的 ✦
-    if (type !== 'star' && ta.value === '✦') ta.value = '';
-
-    if (type === 'star')          { ta.value = '✦'; ta.disabled = true; ta.classList.add('bg-stone-100'); }
-    else if (type === 'br')       { ta.value = ''; ta.placeholder = '🔒 空行間距'; ta.disabled = true; ta.classList.add('bg-stone-100'); }
-    else if (type === 'h3_gold')  ta.placeholder = '請輸入大標題文字…';
-    else if (type === 'h4_brown') { ta.placeholder = '請輸入標題文字…'; cp.style.display = 'flex'; }
-    else if (type === 'p_system') { ta.placeholder = '請輸入內文段落…'; cp.style.display = 'flex'; }
-    else if (type === 'img')      ta.placeholder = '請貼上完整的圖片網址（https://…）';
+    const def = type === 'h4_brown' ? C_H4 : '#333333';
+    row.querySelector('.color-swatch').style.background = on ? row.querySelector('.color-val').value : def;
 }
 function delRow(id) { document.getElementById(id).remove(); renderOutput(); }
 function moveRow(id, dir) {
-    const c = document.getElementById('row-container'); const r = document.getElementById(id);
+    const c = document.getElementById('row-container'), r = document.getElementById(id);
     if (dir === -1 && r.previousElementSibling) c.insertBefore(r, r.previousElementSibling);
-    if (dir ===  1 && r.nextElementSibling)     c.insertBefore(r.nextElementSibling, r);
+    if (dir === 1 && r.nextElementSibling) c.insertBefore(r.nextElementSibling, r);
     renderOutput();
 }
 function dupRow(id) {
     const r = document.getElementById(id);
-    addRow(r.querySelector('.type-select').value,
-           r.querySelector('.text-input').value,
-           r.querySelector('.color-toggle').checked ? r.querySelector('.color-val').value : '',
-           id);
+    addRow(r.querySelector('.type-select').value, r.querySelector('.text-input').value,
+           r.querySelector('.color-toggle').checked ? r.querySelector('.color-val').value : '', id);
     renderOutput();
 }
 function renumberRows() {
-    [...document.getElementById('row-container').children].forEach((r, i) => {
-        const n = r.querySelector('.row-num'); if (n) n.textContent = i + 1;
-    });
+    [...document.getElementById('row-container').children].forEach((r, i) => r.querySelector('.row-num').textContent = i + 1);
 }
 
-// ═══════════════════════════════════════════════════════════
-//  調色盤
-// ═══════════════════════════════════════════════════════════
+// ═══════════════ 調色盤 ═══════════════
 function openColorPicker(trig, id) {
     activePickerId = id;
-    const pop = document.getElementById('color-popover'); const r = trig.getBoundingClientRect();
+    const pop = document.getElementById('color-popover'), r = trig.getBoundingClientRect();
     pop.style.top = `${r.bottom + window.scrollY + 6}px`;
-    pop.style.left = `${Math.max(8, r.left + window.scrollX - 80)}px`;
+    pop.style.left = `${Math.max(8, Math.min(window.innerWidth - 230, r.left + window.scrollX - 80))}px`;
     pop.classList.remove('hidden');
     pickColor(document.getElementById(id).querySelector('.color-val').value);
 }
 function pickColor(hex) {
-    hex = toHex(hex);
-    if (!isValidHex(hex)) return;
+    hex = toHex(hex); if (!isValidHex(hex)) return;
     document.getElementById('color-preview-dot').style.backgroundColor = hex;
     document.getElementById('color-hex').value = hex.toUpperCase();
-    document.getElementById('free-color').value = hex.toLowerCase();
+    document.getElementById('free-color').value = hex;
 }
 function onHexInput(v) {
-    v = v.trim(); if (v && v[0] !== '#') v = '#' + v;
-    const hex = toHex(v);
-    if (isValidHex(hex)) {
-        document.getElementById('color-preview-dot').style.backgroundColor = hex;
-        document.getElementById('free-color').value = hex.toLowerCase();
-    }
+    v = v.trim(); if (v && v[0] !== '#') v = '#' + v; const hex = toHex(v);
+    if (isValidHex(hex)) { document.getElementById('color-preview-dot').style.backgroundColor = hex; document.getElementById('free-color').value = hex; }
 }
 function applyColor() {
-    if (!activePickerId) return;
-    let hex = document.getElementById('color-hex').value.trim();
-    if (hex && hex[0] !== '#') hex = '#' + hex;
-    hex = toHex(hex);
+    const row = document.getElementById(activePickerId); if (!row) return;
+    let hex = document.getElementById('color-hex').value.trim(); if (hex && hex[0] !== '#') hex = '#' + hex; hex = toHex(hex);
     if (!isValidHex(hex)) { alert('色碼格式不正確，請輸入像 #AA846A 這樣的 6 位色碼'); return; }
-    const row = document.getElementById(activePickerId);
-    if (!row) return;
-    row.querySelector('.color-val').value = hex.toLowerCase();
-    row.querySelector('.color-swatch').style.background = hex;
-    row.querySelector('.color-toggle').checked = true;
-    document.getElementById('color-popover').classList.add('hidden');
-    renderOutput();
+    row.querySelector('.color-val').value = hex; row.querySelector('.color-toggle').checked = true;
+    closePicker(); updateSwatch(row); renderOutput();
 }
+function clearColor() {
+    const row = document.getElementById(activePickerId); if (!row) return;
+    row.querySelector('.color-toggle').checked = false; closePicker(); updateSwatch(row); renderOutput();
+}
+function closePicker() { document.getElementById('color-popover').classList.add('hidden'); }
 document.addEventListener('mousedown', e => {
     const p = document.getElementById('color-popover');
-    if (!p.classList.contains('hidden') && !p.contains(e.target) && !e.target.classList.contains('color-trigger')) p.classList.add('hidden');
+    if (!p.classList.contains('hidden') && !p.contains(e.target) && !e.target.closest('.color-trigger')) closePicker();
 });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { closePicker(); cancelImport(); } });
 
-// ═══════════════════════════════════════════════════════════
-//  預覽聯動
-// ═══════════════════════════════════════════════════════════
+// ═══════════════ 預覽聯動 ═══════════════
 function hlPreview(k) {
-    activeHl = String(k);
-    const el = document.getElementById('pi-' + k);
+    activeHl = String(k); const el = document.getElementById('pi-' + k);
     if (el) { el.classList.add('preview-highlight'); el.scrollIntoView({ block:'nearest', behavior:'smooth' }); }
 }
 function unhlPreview(k) {
     if (activeHl === String(k)) activeHl = null;
-    const el = document.getElementById('pi-' + k);
-    if (el) el.classList.remove('preview-highlight');
+    const el = document.getElementById('pi-' + k); if (el) el.classList.remove('preview-highlight');
 }
+// 點預覽 → 跳到對應的編輯框
+document.addEventListener('click', e => {
+    const pi = e.target.closest('#preview-area [id^="pi-"]'); if (!pi) return;
+    const row = document.querySelector(`#row-container [data-index="${pi.id.slice(3)}"]`); if (!row) return;
+    row.scrollIntoView({ block:'center', behavior:'smooth' });
+    const ta = row.querySelector('.text-input');
+    if (!ta.disabled) ta.focus(); else { row.style.borderColor = '#caa379'; setTimeout(() => row.style.borderColor = '', 900); }
+});
 
-// ═══════════════════════════════════════════════════════════
-//  拖曳排序
-// ═══════════════════════════════════════════════════════════
+// ═══════════════ 拖曳 ═══════════════
 function setupDrag() {
-    const container = document.getElementById('row-container');
-    container.querySelectorAll('.draggable-row').forEach(row => {
+    const c = document.getElementById('row-container');
+    c.querySelectorAll('.draggable-row').forEach(row => {
         const h = row.querySelector('.drag-handle');
         h.onmousedown = () => row.setAttribute('draggable', 'true');
-        h.onmouseup   = () => row.setAttribute('draggable', 'false');
+        h.onmouseup = () => row.setAttribute('draggable', 'false');
         row.ondragstart = () => row.classList.add('dragging');
         row.ondragend = () => { row.classList.remove('dragging'); row.setAttribute('draggable', 'false'); renderOutput(); };
     });
-    container.ondragover = e => {
-        e.preventDefault();
-        const dragged = container.querySelector('.dragging'); if (!dragged) return;
-        const after = [...container.querySelectorAll('.draggable-row:not(.dragging)')].reduce((cl, ch) => {
-            const box = ch.getBoundingClientRect();
-            const off = e.clientY - box.top - box.height / 2;
-            return (off < 0 && off > cl.offset) ? { offset: off, element: ch } : cl;
+    c.ondragover = e => {
+        e.preventDefault(); const d = c.querySelector('.dragging'); if (!d) return;
+        const after = [...c.querySelectorAll('.draggable-row:not(.dragging)')].reduce((cl, ch) => {
+            const b = ch.getBoundingClientRect(), off = e.clientY - b.top - b.height / 2;
+            return off < 0 && off > cl.offset ? { offset: off, element: ch } : cl;
         }, { offset: -Infinity }).element;
-        after ? container.insertBefore(dragged, after) : container.appendChild(dragged);
+        after ? c.insertBefore(d, after) : c.appendChild(d);
     };
 }
 
 function highlightCode(src) {
     let t = src.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-    t = t.replace(/(&lt;!--[\s\S]*?--&gt;)/g, '<span class="hl-cmt">$1</span>');
-    t = t.replace(/(&lt;\/?)(div|p|h3|h4|img|br|strong|span|em|a)\b([\s\S]*?)(\/?&gt;)/g, (_, open, tag, body, close) => {
-        const pb = body.replace(/([a-zA-Z\-]+)=(&quot;.*?&quot;)/g, (__, k, val) => {
-            const cv = val.replace(/(#[a-fA-F0-9]{3,8})\b/g, '<span class="hl-color">$1</span>');
-            return `<span class="hl-attr">${k}</span><span class="hl-symbol">=</span><span class="hl-val">${cv}</span>`;
-        });
-        return `<span class="hl-symbol">${open}</span><span class="hl-tag">${tag}</span>${pb}<span class="hl-symbol">${close}</span>`;
+    return t.replace(/(&lt;\/?)(div|p|h3|h4|img|br|strong|span|em|a|ul|ol|li)\b([\s\S]*?)(\/?&gt;)/g, (_, o, tag, body, cl) => {
+        const pb = body.replace(/([a-zA-Z\-]+)=(&quot;.*?&quot;)/g, (__, k, v) =>
+            `<span class="hl-attr">${k}</span><span class="hl-symbol">=</span><span class="hl-val">${v.replace(/(#[a-fA-F0-9]{3,8})\b/g, '<span class="hl-color">$1</span>')}</span>`);
+        return `<span class="hl-symbol">${o}</span><span class="hl-tag">${tag}</span>${pb}<span class="hl-symbol">${cl}</span>`;
     });
-    return t;
 }
 
-// ═══════════════════════════════════════════════════════════
-//  renderOutput — 核心輸出引擎
-//  ★ 2026.11：不再使用 <center>，每個區塊自帶 text-align: center;
-// ═══════════════════════════════════════════════════════════
+// ═══════════════ 核心輸出 ═══════════════
 function renderOutput() {
-    let html = ''; let prev = '';
-
-    // ── 1. 香氣組成比例條 ──
-    if (document.getElementById('toggle-bars').checked) {
-        const active = [];
-        for (let i = 1; i <= 6; i++) {
-            if (document.getElementById(`chk-scent-${i}`).checked) {
-                const v = parseInt(document.getElementById(`val-scent-${i}`).value) || 0;
-                if (v > 0) active.push({ label: SCENT_LIBRARY[i].label, val: v, color: SCENT_LIBRARY[i].color });
-            }
-        }
-        if (active.length) {
-            const labelDivs = active.map(s => `<div style="flex: 0 0 ${s.val}%; text-align: center;">${s.label}</div>`).join('\n');
-            const barDivs   = active.map(s => `<div style="flex: 0 0 ${s.val}%; background: ${s.color};">&nbsp;</div>`).join('\n');
-            const bh = `<div style="${ALIGN} margin: 0 auto 25px auto; width: 100%; max-width: 440px; color: #494746; font-family: 'Noto Sans TC', sans-serif; box-sizing: border-box; padding: 0 10px;">\n`
-                + `<div style="display: flex; font-size: 14px; margin-bottom: 6px; font-weight: 500; letter-spacing: 0.05em;">\n${labelDivs}\n</div>\n`
-                + `<div style="display: flex; height: 32px; border-radius: 0px; overflow: hidden;">\n${barDivs}\n</div>\n</div>\n\n`;
-            html += bh; prev += `<div id="pi-bars" class="w-full relative">${bh}</div>`;
-        }
-    }
-
-    // ── 2. 特質標籤 ──
-    if (document.getElementById('toggle-dots').checked) {
-        const cards = [];
-        document.querySelectorAll('#tag-matrix input:checked').forEach(box => {
-            const t = CHARACTER_TAGS.find(x => x.id === box.value); if (!t) return;
-            cards.push(`<div style="display: inline-block; vertical-align: top; width: 88px; height: 92px; background-color: ${t.bg}; border-radius: 20px; box-sizing: border-box; padding: 13px 4px 8px 4px; margin: 5px 6px; ${ALIGN} font-family: 'Noto Sans TC', sans-serif;">
-<img src="${t.icon}" alt="${t.label}" style="width: 28px; height: 32px; object-fit: contain; display: block; margin: 0 auto 10px auto;" />
-<div style="font-size: 11px; color: #383533; font-weight: bold; ${ALIGN} white-space: nowrap; letter-spacing: 0.01em;">${t.label}</div>
-</div>`);
-        });
-        if (cards.length) {
-            const th = `<div style="${ALIGN} width: 100%; max-width: 460px; margin: 0 auto 25px auto; box-sizing: border-box;">\n`
-                + cards.join('\n') + `\n</div>\n\n`;
-            html += th; prev += `<div id="pi-dots" class="w-full relative">${th}</div>`;
-        }
-    }
-
-    // ── 3. 圖文主體 ──
+    let html = '', prev = '';
     for (const row of document.getElementById('row-container').children) {
-        const idx  = row.getAttribute('data-index');
+        const idx = row.getAttribute('data-index');
         const type = row.querySelector('.type-select').value;
         const text = row.querySelector('.text-input').value.trim();
-        const chk  = row.querySelector('.color-toggle').checked;
-        const col  = row.querySelector('.color-val').value;
-
-        let color = '';
-        if (type === 'h4_brown') color = chk ? col : C_H4;
-        else if (type === 'p_system') color = chk ? col : '';
-
-        const cs = color ? ` style="${ALIGN} color: ${color};"` : ` style="${ALIGN}"`;
-        // 預覽專用（Tailwind 會重置標題字級，所以補回）
-        const ps = `text-align:center;margin:0;padding:6px 0;color:${color || '#333'};`;
+        const chk = row.querySelector('.color-toggle').checked;
+        const col = row.querySelector('.color-val').value;
+        const color = type === 'h4_brown' ? (chk ? col : C_H4) : (TYPES[type].color && chk ? col : '');
+        const colorCss = color ? ` color: ${color};` : '';
         const ft = text.replace(/\n/g, '<br />\n');
-
         let lh = '', lp = '';
+
         switch (type) {
             case 'star':
-                lh = `<h3 style="${ALIGN} color: ${C_STAR};">✦</h3>\n`;
+                lh = `<h3 style="${ALIGN} color: ${C_STAR};">✦</h3>`;
                 lp = `<h3 style="text-align:center;color:${C_STAR};font-weight:bold;font-size:1.17em;margin:0;">✦</h3>`; break;
             case 'br':
-                lh = `<p style="${ALIGN}">&nbsp;</p>\n`;
-                lp = `<p style="text-align:center;margin:0;padding:10px 0;">&nbsp;</p>`; break;
+                lh = `<p style="${ALIGN}">&nbsp;</p>`;
+                lp = `<p style="text-align:center;margin:0;padding:6px 0;">&nbsp;</p>`; break;
             case 'img': {
-                if (!text) break;
-                const src = escAttr(text);
-                // 圖片包在置中的 <p> 裡：編輯器本來就會這樣包，也最不容易被改掉
-                lh = `<p style="${ALIGN}"><img src="${src}" width="800" style="max-width: 100%; height: auto; display: block; margin: 0 auto;" /></p>\n`;
-                lp = `<p style="text-align:center;margin:0;"><img src="${src}" style="max-width:100%;height:auto;display:block;margin:0 auto;" width="800" /></p>`; break;
+                if (!text) break; const src = escAttr(text);
+                lh = `<p style="${ALIGN}"><img src="${src}" width="800" style="max-width: 100%; height: auto; display: block; margin: 0 auto;" /></p>`;
+                lp = `<p style="text-align:center;margin:0;"><img src="${src}" width="800" style="max-width:100%;height:auto;display:block;margin:0 auto;" onerror="this.replaceWith(Object.assign(document.createElement('div'),{textContent:'⚠️ 圖片網址讀不到',style:'color:#c2410c;font-size:12px;padding:8px'}))" /></p>`; break;
             }
             case 'h3_gold':
                 if (!text) break;
-                lh = `<h3 style="${ALIGN} color: ${C_H3};">${ft}</h3>\n`;
+                lh = `<h3 style="${ALIGN} color: ${C_H3};">${ft}</h3>`;
                 lp = `<h3 style="text-align:center;color:${C_H3};font-weight:bold;font-size:1.17em;margin:0;padding:8px 0;">${ft}</h3>`; break;
             case 'h4_brown':
                 if (!text) break;
-                lh = `<h4${cs}><strong>${ft}</strong></h4>\n`;
-                lp = `<h4 style="${ps}"><strong>${ft}</strong></h4>`; break;
+                lh = `<h4 style="${ALIGN}${colorCss}"><strong>${ft}</strong></h4>`;
+                lp = `<h4 style="text-align:center;margin:0;padding:6px 0;color:${color};font-size:1em;"><strong>${ft}</strong></h4>`; break;
             case 'p_system':
                 if (!text) break;
-                lh = `<p${cs}>${ft}</p>\n`;
-                lp = `<p style="${ps}">${ft}</p>`; break;
+                lh = `<p style="${ALIGN}${colorCss}">${ft}</p>`;
+                lp = `<p style="text-align:center;margin:0;padding:6px 0;color:${color || '#333'};">${ft}</p>`; break;
+            case 'ul': case 'ol': {
+                const items = text.split('\n').map(s => s.trim().replace(/^([•・\-*]|\d+[.、)])\s*/, '')).filter(Boolean);
+                if (!items.length) break;
+                const lis = items.map(s => `<li>${s}</li>`).join('\n');
+                lh = `<${type} style="${LIST_STYLE[type]}${colorCss}">\n${lis}\n</${type}>`;
+                lp = `<${type} style="${LIST_STYLE[type]}${colorCss || ' color: #333;'} padding-top:6px; padding-bottom:6px;">${items.map(s => `<li>${s}</li>`).join('')}</${type}>`; break;
+            }
         }
-        html += lh;
-        if (lp) prev += `<div id="pi-${idx}" class="w-full relative">${lp}</div>`;
+        if (lh) html += lh + '\n';
+        if (lp) prev += `<div id="pi-${idx}" class="w-full relative cursor-pointer">${lp}</div>`;
     }
-
     html = html.trim();
     document.getElementById('code-plain').value = html;
     document.getElementById('code-highlighted').innerHTML = highlightCode(html);
-    document.getElementById('preview-area').innerHTML = prev;
+    document.getElementById('preview-area').innerHTML = prev || '<p style="text-align:center;color:#aaa;font-size:12px">（還沒有內容，從左下方新增段落）</p>';
     renumberRows();
-
-    // 打字時預覽會重繪，補回「正在編輯」發光框（原版一打字就消失）
-    if (activeHl) {
-        const el = document.getElementById('pi-' + activeHl);
-        if (el) el.classList.add('preview-highlight');
-    }
+    if (activeHl) { const el = document.getElementById('pi-' + activeHl); if (el) el.classList.add('preview-highlight'); }
+    saveDraft();
 }
 
 function copyCode() {
-    const v = document.getElementById('code-plain').value;
-    const btn = document.getElementById('copy-btn');
+    const v = document.getElementById('code-plain').value, btn = document.getElementById('copy-btn');
+    if (!v) { alert('目前沒有內容可以複製'); return; }
     copyText(v).then(() => {
-        btn.innerHTML = '<span>✅</span><span>已複製！</span>';
-        btn.style.background = 'linear-gradient(135deg,#1a7a3a,#22a85a)';
-        btn.classList.add('anim-ok');
-        setTimeout(() => {
-            btn.innerHTML = '<span>📋</span><span>複製 HTML</span>';
-            btn.style.background = '';
-            btn.classList.remove('anim-ok');
-        }, 2200);
-    }).catch(() => alert('複製失敗，請直接在右側代碼區全選複製'));
+        btn.textContent = '✅ 已複製！'; btn.style.background = 'linear-gradient(135deg,#1a7a3a,#22a85a)';
+        setTimeout(() => { btn.textContent = '📋 複製 HTML'; btn.style.background = ''; }, 2000);
+    }).catch(() => alert('複製失敗，請直接在代碼區全選複製'));
 }
 
-// ═══════════════════════════════════════════════════════════
-//  匯入（舊版含 <center> 與新版都能讀）
-// ═══════════════════════════════════════════════════════════
-function getFlexPercent(div) {
-    // 編輯器可能把 flex: 0 0 60% 拆成 flex-basis，兩種都讀
-    const s = div.getAttribute('style') || '';
-    let m = s.match(/flex\s*:\s*0\s+0\s+(\d+(?:\.\d+)?)%/i) || s.match(/flex-basis\s*:\s*(\d+(?:\.\d+)?)%/i);
-    return m ? Math.round(parseFloat(m[1])) : null;
-}
-
+// ═══════════════ 匯入 ═══════════════
 function importHTML() {
     const raw = document.getElementById('import-code').value.trim();
     if (!raw) { alert('請貼上有效的 HTML 代碼！'); return; }
     const doc = new DOMParser().parseFromString(raw, 'text/html');
-
-    // ── 香氣比例：找「有 flex 百分比的 div」，有文字的是標籤列
-    const bars = { enabled: false, activeIndices: [], vals: {} };
-    const pctDivs = [...doc.querySelectorAll('div[style]')].filter(d => getFlexPercent(d) !== null);
-    pctDivs.forEach(div => {
-        const label = div.textContent.replace(/\u00a0/g, ' ').trim();
-        if (!label) return;
-        const id = Object.keys(SCENT_LIBRARY).find(k => SCENT_LIBRARY[k].label === label);
-        if (id && !bars.activeIndices.includes(+id)) {
-            bars.activeIndices.push(+id); bars.vals[id] = getFlexPercent(div);
-        }
-    });
-    bars.enabled = bars.activeIndices.length > 0;
-
-    // ── 特質標籤：用 icon 的 alt 對應
-    const dots = { enabled: false, selectedTagIds: [] };
-    doc.querySelectorAll('img[alt]').forEach(img => {
-        const found = CHARACTER_TAGS.find(t => t.label === (img.getAttribute('alt') || '').trim());
-        if (found && !dots.selectedTagIds.includes(found.id) && dots.selectedTagIds.length < 4) dots.selectedTagIds.push(found.id);
-    });
-    if (dots.selectedTagIds.length) dots.enabled = true;
-    else {
-        // 最舊版：滑桿圓點
-        const oldSliders = [];
-        doc.querySelectorAll('div[style*="left:"]').forEach(d => {
-            if (d.style.width === '14px') { const m = d.style.left.match(/(\d+)%/); if (m) oldSliders.push(parseInt(m[1])); }
-        });
-        if (oldSliders.length >= 4) {
-            dots.enabled = true;
-            dots.selectedTagIds.push(oldSliders[0] < 30 ? 't1' : 't12');
-            dots.selectedTagIds.push(oldSliders[1] < 30 ? 't2' : 't6');
-        }
-    }
-
-    // ── 圖文主體：攤平收集 h3 / h4 / p / img，跳過比例條與標籤卡
-    const isIconImg = img => (img.getAttribute('src') || '').includes('/ICON/web-icon-');
-    const insideWidget = node => node.closest('table') || node.closest('div[style*="width: 88px"], div[style*="width:88px"]') ||
-                                 (node.parentElement && pctDivs.some(d => d.contains(node)));
     const collected = [];
     (function walk(node) {
         for (const ch of node.children) {
             const tag = ch.tagName.toLowerCase();
-            if (insideWidget(ch)) continue;
-            if (tag === 'h3' || tag === 'h4') { collected.push(ch); continue; }
-            if (tag === 'img') { if (!isIconImg(ch)) collected.push(ch); continue; }
+            if (tag === 'table' || tag === 'script' || tag === 'style') continue;
+            if (['h1','h2','h3','h4','h5','h6','ul','ol','img'].includes(tag)) { collected.push(ch); continue; }
             if (tag === 'p') {
-                const imgs = [...ch.querySelectorAll('img')].filter(i => !isIconImg(i));
+                const imgs = ch.querySelectorAll('img');
                 if (imgs.length) imgs.forEach(i => collected.push(i)); else collected.push(ch);
                 continue;
+            }
+            if (tag === 'div' && ![...ch.children].some(c => /^(P|H\d|UL|OL|DIV|IMG|TABLE|CENTER)$/.test(c.tagName)) && ch.textContent.trim()) {
+                collected.push(ch); continue;   // 純文字的 div 當成內文
             }
             walk(ch);
         }
     })(doc.body);
 
-    const rows = []; const cnt = { star:0, h3:0, h4:0, p:0, img:0, br:0 };
-    for (const node of collected) {
-        const tag = node.tagName.toLowerCase();
-        const color = toHex(node.style.color || '');
-        const inner = node.innerHTML.trim();
-        const txt = node.textContent.replace(/\u00a0/g, ' ').trim();
-
-        if (tag === 'img') { rows.push({ type:'img', text: node.getAttribute('src') || '', color:'' }); cnt.img++; continue; }
-        if (tag === 'p' && !txt) { rows.push({ type:'br', text:'', color:'' }); cnt.br++; continue; }
-        if (tag === 'h3' && txt === '✦') { rows.push({ type:'star', text:'', color:'' }); cnt.star++; continue; }
-        if (tag === 'h3') { rows.push({ type:'h3_gold', text: inner, color:'' }); cnt.h3++; continue; }
-        if (tag === 'h4') {
-            const clean = inner.replace(/<\/?strong>/gi, '').trim();
-            rows.push({ type:'h4_brown', text: clean, color: (!color || color === C_H4) ? '' : color }); cnt.h4++; continue;
+    const rows = [], cnt = { h3:0, star:0, h4:0, p:0, list:0, img:0, br:0 };
+    for (const n of collected) {
+        const tag = n.tagName.toLowerCase();
+        const color = toHex(n.style.color || '');
+        const inner = n.innerHTML.trim();
+        const txt = n.textContent.replace(/ /g, ' ').trim();
+        if (tag === 'img') { const s = n.getAttribute('src'); if (s) { rows.push({ type:'img', text:s }); cnt.img++; } continue; }
+        if (tag === 'ul' || tag === 'ol') {
+            const items = [...n.querySelectorAll(':scope > li')].map(li => li.innerHTML.replace(/<br\s*\/?>/gi, ' ').trim()).filter(Boolean);
+            if (items.length) { rows.push({ type: tag, text: items.join('\n'), color }); cnt.list++; }
+            continue;
         }
-        if (tag === 'p') { rows.push({ type:'p_system', text: inner, color }); cnt.p++; continue; }
+        if ((tag === 'p' || tag === 'div') && !txt) { rows.push({ type:'br', text:'' }); cnt.br++; continue; }
+        if (tag === 'h3' && txt === '✦') { rows.push({ type:'star', text:'' }); cnt.star++; continue; }
+        if (/^h[1-3]$/.test(tag)) { rows.push({ type:'h3_gold', text: inner }); cnt.h3++; continue; }
+        if (/^h[4-6]$/.test(tag)) {
+            rows.push({ type:'h4_brown', text: inner.replace(/<\/?strong>/gi, '').trim(), color: color === C_H4 ? '' : color }); cnt.h4++; continue;
+        }
+        rows.push({ type:'p_system', text: inner, color }); cnt.p++;
     }
+    if (!rows.length) { alert('沒有偵測到可用的段落，請確認貼上的是 HTML 原始碼'); return; }
 
-    pendingImport = { bars, dots, rows };
+    pendingImport = rows;
     document.getElementById('import-summary').innerHTML = [
-        bars.enabled ? `📊 香氣比例：已抓取 ${bars.activeIndices.length} 種` : '📊 香氣比例：未偵測',
-        dots.enabled ? `📍 特質標籤：已還原 ${dots.selectedTagIds.length} 個` : '📍 特質標籤：未偵測',
-        `🔠 超大標題 h3：${cnt.h3} 個`, `✦ 分隔符號：${cnt.star} 個`, `🔡 標題 h4：${cnt.h4} 個`,
-        `📝 內文 p：${cnt.p} 個`, `🖼️ 圖片 img：${cnt.img} 個`, `↕️ 空行：${cnt.br} 個`
+        `🔠 大標 h3：${cnt.h3} 個`, `✦ 分隔符號：${cnt.star} 個`, `🔡 標題 h4：${cnt.h4} 個`, `📝 內文：${cnt.p} 個`,
+        `• 列點清單：${cnt.list} 個`, `🖼️ 圖片：${cnt.img} 張`, `↕️ 空行：${cnt.br} 個`
     ].map(s => `<div>${s}</div>`).join('');
     document.getElementById('import-confirm').classList.remove('hidden');
 }
-
 function cancelImport() { pendingImport = null; document.getElementById('import-confirm').classList.add('hidden'); }
 function confirmImport() {
     document.getElementById('import-confirm').classList.add('hidden');
     if (!pendingImport) return;
-    const { bars, dots, rows } = pendingImport; pendingImport = null;
-
-    for (let i = 1; i <= 6; i++) {
-        const on = bars.activeIndices.includes(i);
-        document.getElementById(`chk-scent-${i}`).checked = on;
-        document.getElementById(`val-scent-${i}`).value = on ? bars.vals[i] : 0;
-        setScentInputState(i);
-    }
-    document.getElementById('toggle-bars').checked = bars.enabled;
-
-    document.getElementById('toggle-dots').checked = dots.enabled;
-    CHARACTER_TAGS.forEach(t => { document.getElementById(`chk-tag-${t.id}`).checked = dots.selectedTagIds.includes(t.id); });
-
+    const rows = pendingImport; pendingImport = null;
     document.getElementById('row-container').innerHTML = ''; rowCount = 0; activeHl = null;
     rows.forEach(r => addRow(r.type, r.text, r.color));
-
-    toggleSections(); updateTagCount(); validateAndRenderBars();
-    toast('🎉 已成功匯入，並轉成無 <center> 的新格式');
+    renderOutput();
+    document.getElementById('import-code').value = '';
+    document.querySelector('details').open = false;
+    toast('🎉 已匯入，輸出已轉成新格式');
 }
 
 window.onload = init;
