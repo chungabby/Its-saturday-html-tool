@@ -32,7 +32,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helve
 #color-popover { border:1px solid #e8e2d9; box-shadow:0 8px 30px rgba(80,50,30,0.15); }
 #device-frame { margin:0 auto; background:#fff; overflow:hidden; border:1px solid #d6cfc5; box-shadow:0 6px 24px rgba(80,50,30,.12); }
 #device-frame.phone { border-radius:22px; }
-@media (min-width:1024px){ .lg-sticky{ position:sticky; top:108px; } }
+@media (min-width:1024px){ .lg-sticky{ position:sticky; top:108px; max-height:calc(100vh - 124px); overflow-y:auto; overscroll-behavior:contain; } }
 
 /* ═══ 動態效果 ═══ */
 :root { --ease: cubic-bezier(.2,.8,.2,1); }
@@ -51,8 +51,8 @@ button:active { transform: scale(.96); }
 @keyframes popIn { from { opacity:0; transform:translateY(-6px) scale(.97); } to { opacity:1; transform:none; } }
 .pop-in { animation: popIn .18s var(--ease); }
 @keyframes fadeOnly { from { opacity:0; } to { opacity:1; } }
-#import-confirm:not(.hidden) { animation: fadeOnly .2s ease; }
-#import-confirm:not(.hidden) > div { animation: popIn .26s var(--ease); }
+#import-confirm:not(.hidden), #settings-modal:not(.hidden) { animation: fadeOnly .2s ease; }
+#import-confirm:not(.hidden) > div, #settings-modal:not(.hidden) > div { animation: popIn .26s var(--ease); }
 .toast { animation: fadeUp .28s var(--ease); transition: opacity .25s, transform .25s; }
 .toast.out { opacity:0; transform:translateY(8px); }
 @keyframes okPulse { 0%{box-shadow:0 0 0 0 rgba(34,150,90,.45)} 100%{box-shadow:0 0 0 10px rgba(34,150,90,0)} }
@@ -70,7 +70,7 @@ details[open] > summary ~ * { animation: fadeUp .25s var(--ease); }
     <div class="flex items-center gap-3">
       <img src="https://ik.imagekit.io/itssaturday/its-saturday-logo-300-100-1.png?updatedAt=1753622395304" alt="It's Saturday! Logo" class="h-8 object-contain">
       <h1 class="text-sm font-bold text-stone-800">It's Saturday! 工具總管</h1>
-      <span class="version-badge">2026.11 v8</span>
+      <span class="version-badge">2026.11 v10</span>
     </div>
     <div class="text-xs text-stone-400 flex items-center gap-2">
       <span class="w-2 h-2 rounded-full bg-emerald-400 inline-block"></span><span>草稿會自動保存在這台電腦</span>
@@ -124,26 +124,16 @@ details[open] > summary ~ * { animation: fadeUp .25s var(--ease); }
     <div class="panel-card p-5 lg-sticky">
       <div class="flex items-center justify-between mb-3 gap-2 flex-wrap">
         <h2 class="text-sm font-bold text-stone-700">👀 官網畫面模擬</h2>
-        <div id="device-seg" class="flex gap-0.5 bg-stone-100 p-0.5 rounded-lg"></div>
+        <div class="flex items-center gap-1.5">
+          <div id="device-seg" class="flex gap-0.5 bg-stone-100 p-0.5 rounded-lg"></div>
+          <button onclick="openSettings()" class="seg bg-stone-100" title="預覽設定：官網 CSS、上方公告文字">⚙️</button>
+        </div>
       </div>
-      <div id="preview-scroll" class="relative rounded-xl bg-stone-100 overflow-y-auto" style="max-height:calc(100vh - 250px);min-height:320px;padding:16px">
+      <div id="preview-scroll" class="relative rounded-xl bg-stone-100 overflow-y-auto" style="max-height:calc(100vh - 272px);min-height:320px;padding:16px">
         <div id="device-frame"><iframe id="preview-frame" title="官網預覽" style="border:0;display:block;transform-origin:0 0;"></iframe></div>
       </div>
       <div id="preview-meta" class="text-[10px] text-stone-400 mt-2 text-center"></div>
 
-      <details class="mt-3">
-        <summary class="cursor-pointer select-none text-[11px] font-semibold text-stone-500">⚙️ 預覽設定：官網 CSS、上方公告文字</summary>
-        <textarea id="site-css-input" class="mt-2 w-full h-40 bg-stone-50 border border-stone-200 text-[10px] font-mono p-2 rounded-lg field-focus text-stone-600" spellcheck="false"></textarea>
-        <div class="flex items-center gap-2 mt-1.5">
-          <button onclick="applySiteCss()" class="btn-brand text-[11px] font-semibold px-3 py-1 rounded-md">套用到預覽</button>
-          <button onclick="resetSiteCss()" class="text-[11px] text-stone-400 hover:text-stone-700">還原預設</button>
-        </div>
-        <div class="mt-3 flex items-center gap-2">
-          <span class="text-[11px] text-stone-500 shrink-0">上方公告文字</span>
-          <input id="ann-input" oninput="setAnnounce(this.value)" class="flex-1 min-w-0 border border-stone-200 rounded-md text-[11px] px-2 py-1 field-focus">
-        </div>
-        <p class="text-[10px] text-stone-400 mt-1.5 leading-relaxed">註：Adobe Font（Collier）通常只授權給官網網域使用，所以這裡的英文字可能以思源黑體代替；字級、行高、字距、粗細、寬度都會照官網規則呈現。</p>
-      </details>
     </div>
 
     <!-- 代碼 -->
@@ -201,6 +191,25 @@ details[open] > summary ~ * { animation: fadeUp .25s var(--ease); }
   <div class="flex gap-1.5">
     <button onclick="clearColor()" class="flex-1 border border-stone-200 text-stone-500 text-[11px] py-1.5 rounded-lg">用預設色</button>
     <button onclick="applyColor()" class="flex-1 btn-brand text-[11px] font-semibold py-1.5 rounded-lg">確定套用</button>
+  </div>
+</div>
+
+<!-- 預覽設定 -->
+<div id="settings-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4" style="background:rgba(0,0,0,0.45)" onclick="if(event.target===this)closeSettings()">
+  <div class="bg-white rounded-2xl p-6 shadow-2xl w-full max-w-[620px] max-h-[88vh] overflow-y-auto">
+    <div class="flex items-center justify-between mb-4">
+      <div class="text-base font-bold text-stone-800">⚙️ 預覽設定</div>
+      <button onclick="closeSettings()" class="text-stone-400 hover:text-stone-700 text-lg px-1">✕</button>
+    </div>
+    <label class="section-label">上方公告文字</label>
+    <input id="ann-input" oninput="setAnnounce(this.value)" class="mt-1.5 w-full border border-stone-200 rounded-lg text-xs px-3 py-2 field-focus">
+    <label class="section-label block mt-5">官網 CSS（官網後台 CSS 有改，就貼到這裡）</label>
+    <textarea id="site-css-input" class="mt-1.5 w-full h-64 bg-stone-50 border border-stone-200 text-[11px] font-mono p-3 rounded-lg field-focus text-stone-600" spellcheck="false"></textarea>
+    <div class="flex items-center gap-2 mt-2">
+      <button onclick="applySiteCss()" class="btn-brand text-xs font-semibold px-4 py-1.5 rounded-lg">套用到預覽</button>
+      <button onclick="resetSiteCss()" class="text-xs text-stone-400 hover:text-stone-700">還原預設</button>
+    </div>
+    <p class="text-[11px] text-stone-400 mt-3 leading-relaxed">註：Adobe Font（Collier）通常只授權給官網網域使用，所以這裡的英文字可能以替代字體顯示；字級、行高、字距、粗細、寬度都會照官網規則呈現。</p>
   </div>
 </div>
 
@@ -814,6 +823,7 @@ body.desk #site-top, body.desk #site-bottom{display:none;}
 #site-top .ann .x{position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:16px;font-weight:300;}
 #site-top .hdr{height:74px;background:#fbf9f5;display:flex;align-items:center;padding:0 12px 0 14px;}
 #site-top .logo{font-family:"Cormorant Garamond",Georgia,serif !important;font-size:25px;font-weight:500;color:#a69177;letter-spacing:0;margin-left:22px;line-height:1;}
+#site-top .logo-img{height:36px;width:auto;margin-left:16px;display:block;object-fit:contain;}
 #site-top .sp{flex:1;}
 #site-top svg{width:24px;height:24px;stroke:#a29898;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;display:block;}
 #site-top .ic{margin-left:24px;position:relative;}
@@ -838,7 +848,7 @@ body.desk #site-top, body.desk #site-bottom{display:none;}
   <div class="ann"><span id="ann-text"></span><span class="x">✕</span></div>
   <div class="hdr">
     <svg viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
-    <span class="logo">It\u2019s Saturday!</span><span class="sp"></span>
+    <img class="logo-img" src="https://ik.imagekit.io/itssaturday/its-saturday-logo-300-100-1.png?updatedAt=1753622395304" alt="It\u2019s Saturday!"><span class="sp"></span>
     <span class="ic"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7.5"/><path d="M16.5 16.5L21 21"/></svg></span>
     <span class="ic"><svg viewBox="0 0 24 24"><path d="M2.5 3.5h2.6l2.4 11.2h11.2l2.2-8H6.2"/><circle cx="9.5" cy="19.5" r="1.2"/><circle cx="17" cy="19.5" r="1.2"/></svg><span class="badge">0</span></span>
     <span class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4.2"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg></span>
@@ -863,6 +873,10 @@ body.desk #site-top, body.desk #site-bottom{display:none;}
     });
     // 圖片讀取失敗提示 / 圖片載入後重新計算高度
     d.addEventListener('error', e => {
+        if (e.target.tagName === 'IMG' && e.target.closest('#site-top')) {   // logo 讀不到時改用文字
+            const s = d.createElement('span'); s.className = 'logo'; s.textContent = 'It\u2019s Saturday!';
+            e.target.replaceWith(s); return;
+        }
         if (e.target.tagName === 'IMG') {
             const w = d.createElement('div'); w.className = 'img-err'; w.textContent = '⚠️ 圖片網址讀不到，請確認網址';
             e.target.replaceWith(w); layoutPreview();
@@ -895,7 +909,7 @@ function setDevice(k, silent) {
     document.getElementById('device-frame').classList.toggle('phone', DEVICES[k].phone);
     const d = pdoc(); if (d && d.body) { d.body.classList.toggle('phone', DEVICES[k].phone); d.body.classList.toggle('desk', !DEVICES[k].phone); }
     // 手機：固定高度的手機畫面（內容在裡面捲動）；電腦：依內容長高
-    document.getElementById('preview-scroll').style.height = DEVICES[k].phone ? 'calc(100vh - 250px)' : '';
+    document.getElementById('preview-scroll').style.height = DEVICES[k].phone ? 'calc(100vh - 272px)' : '';
     if (!silent) layoutPreview();
 }
 
@@ -940,6 +954,8 @@ function checkCollier() {
     if (prev !== fontStatus) layoutPreview();
 }
 
+function openSettings() { document.getElementById('settings-modal').classList.remove('hidden'); }
+function closeSettings() { document.getElementById('settings-modal').classList.add('hidden'); }
 function setAnnounce(v) {
     lsSet(ANN_KEY, v); const el = pdoc().getElementById('ann-text'); if (el) el.textContent = v || DEFAULT_ANN;
 }
@@ -947,7 +963,7 @@ function getSiteCss() { return lsGet(CSS_KEY) || document.getElementById('defaul
 function applySiteCss() {
     const v = document.getElementById('site-css-input').value;
     lsSet(CSS_KEY, v); pdoc().getElementById('site-css').textContent = v;
-    setTimeout(layoutPreview, 50); toast('已套用新的官網 CSS 到預覽', '#7a5c44');
+    setTimeout(layoutPreview, 50); closeSettings(); toast('已套用新的官網 CSS 到預覽', '#7a5c44');
 }
 function resetSiteCss() {
     lsDel(CSS_KEY);
@@ -1175,7 +1191,7 @@ document.addEventListener('mousedown', e => {
     const p = document.getElementById('color-popover');
     if (!p.classList.contains('hidden') && !p.contains(e.target) && !e.target.closest('.color-trigger')) closePicker();
 });
-document.addEventListener('keydown', e => { if (e.key === 'Escape') { closePicker(); cancelImport(); } });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { closePicker(); cancelImport(); closeSettings(); } });
 
 // ═══════════════ 拖曳 ═══════════════
 function setupDrag() {
