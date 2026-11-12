@@ -10,18 +10,8 @@
 body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #f6f4f1; }
 .version-badge { font-size:10px; background:linear-gradient(90deg,#caa379,#e8c9a0); color:#5a3e28; padding:2px 8px; border-radius:20px; font-weight:600; }
 
-/* 語法高亮 */
 .hl-tag{color:#569cd6!important}.hl-attr{color:#9cdcfe!important}.hl-val{color:#ce9178!important}
 .hl-symbol{color:#808080!important}.hl-color{color:#d7ba7d!important}
-
-/* 預覽聯動 */
-.preview-highlight { outline:2.5px solid #caa379!important; outline-offset:5px; background-color:#fffbf6!important; border-radius:6px; position:relative!important; }
-.preview-highlight::before { content:'✏️ 正在編輯'; position:absolute; top:-22px; left:50%; transform:translateX(-50%); background:#caa379; color:#fff; font-size:10px; font-weight:700; padding:2px 10px; border-radius:20px; white-space:nowrap; pointer-events:none; z-index:10; }
-
-/* 預覽區：Tailwind 會清掉列點符號與標題字級，這裡補回，模擬一般網站 */
-#preview-area ul { list-style-type: disc; }
-#preview-area ol { list-style-type: decimal; }
-#preview-area li { margin: 2px 0; }
 
 .panel-card { background:#fff; border:1px solid #e8e2d9; border-radius:14px; box-shadow:0 2px 12px rgba(120,90,60,0.06); }
 .row-card { background:#faf8f5; border:1px solid #e8e2d9; border-radius:10px; transition:border-color .15s,box-shadow .15s; }
@@ -31,39 +21,72 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helve
 .btn-brand:hover { background:linear-gradient(135deg,#5e4433,#7a5c44); transform:translateY(-1px); box-shadow:0 4px 14px rgba(120,80,50,0.3); }
 .chip { background:#fff; border:1px solid #e8e2d9; color:#6b5a4b; font-size:11px; font-weight:600; padding:6px 4px; border-radius:8px; cursor:pointer; transition:all .15s; }
 .chip:hover { border-color:#caa379; background:#fdf8f2; color:#7a5c44; }
+.seg { font-size:11px; font-weight:600; padding:4px 10px; border-radius:7px; color:#8c7b6b; cursor:pointer; transition: background-color .2s, color .2s, box-shadow .2s; }
+.seg.on { background:#fff; color:#7a5c44; box-shadow:0 1px 3px rgba(0,0,0,.1); }
+.bold-btn { font-family: Georgia, serif; font-weight:800; font-size:12px; width:22px; height:22px; border:1px solid #e8e2d9; background:#fff; color:#6b5a4b; border-radius:6px; cursor:pointer; }
+.bold-btn:hover { border-color:#caa379; color:#7a5c44; background:#fdf8f2; }
 .section-label { font-size:11px; font-weight:700; letter-spacing:.07em; color:#8c7b6b; }
 .row-num { min-width:20px; height:20px; background:#e8e2d9; color:#8c7b6b; border-radius:50%; font-size:10px; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
 .dragging { opacity:.38; border:2px dashed #caa379!important; }
-.preview-bg { background-color:#fff; background-image:radial-gradient(#e0d8ce 1px,transparent 1px); background-size:18px 18px; }
 #code-panel::-webkit-scrollbar{width:6px}#code-panel::-webkit-scrollbar-thumb{background:#555;border-radius:3px}
 #color-popover { border:1px solid #e8e2d9; box-shadow:0 8px 30px rgba(80,50,30,0.15); }
+#device-frame { margin:0 auto; background:#fff; overflow:hidden; border:1px solid #d6cfc5; box-shadow:0 6px 24px rgba(80,50,30,.12); }
+#device-frame.phone { border-radius:22px; }
 @media (min-width:1024px){ .lg-sticky{ position:sticky; top:108px; } }
+
+/* ═══ 動態效果 ═══ */
+:root { --ease: cubic-bezier(.2,.8,.2,1); }
+button { transition: transform .14s var(--ease), background-color .18s, color .18s, border-color .18s, box-shadow .18s; }
+button:active { transform: scale(.96); }
+.chip:hover { transform: translateY(-1px); box-shadow:0 3px 10px rgba(120,80,50,.1); }
+.bold-btn.on { background:#7a5c44; color:#fff; border-color:#7a5c44; box-shadow:0 2px 6px rgba(122,92,68,.3); }
+.text-input { transition: border-color .18s, box-shadow .18s, background-color .18s; }
+.text-input.is-bold { font-weight:700; color:#3f342b; }
+@keyframes rowIn { from { opacity:0; transform:translateY(-8px) scale(.985); } to { opacity:1; transform:none; } }
+.row-enter { animation: rowIn .32s var(--ease) both; }
+.row-leave { opacity:0 !important; transform:translateX(16px) !important; pointer-events:none; overflow:hidden;
+  transition: opacity .2s ease, transform .2s ease, max-height .26s var(--ease) .04s, padding .26s var(--ease) .04s, margin .26s var(--ease) .04s, border-width .26s .04s !important; }
+@keyframes fadeUp { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
+.tab-enter { animation: fadeUp .3s var(--ease); }
+@keyframes popIn { from { opacity:0; transform:translateY(-6px) scale(.97); } to { opacity:1; transform:none; } }
+.pop-in { animation: popIn .18s var(--ease); }
+@keyframes fadeOnly { from { opacity:0; } to { opacity:1; } }
+#import-confirm:not(.hidden) { animation: fadeOnly .2s ease; }
+#import-confirm:not(.hidden) > div { animation: popIn .26s var(--ease); }
+.toast { animation: fadeUp .28s var(--ease); transition: opacity .25s, transform .25s; }
+.toast.out { opacity:0; transform:translateY(8px); }
+@keyframes okPulse { 0%{box-shadow:0 0 0 0 rgba(34,150,90,.45)} 100%{box-shadow:0 0 0 10px rgba(34,150,90,0)} }
+.anim-ok { animation: okPulse .6s ease-out; }
+#device-frame { transition: width .34s var(--ease), height .28s var(--ease), opacity .16s ease; }
+#preview-frame { transition: transform .34s var(--ease); }
+details[open] > summary ~ * { animation: fadeUp .25s var(--ease); }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation:none !important; transition:none !important; } }
 </style>
 </head>
 <body class="min-h-screen">
 
 <header class="bg-white border-b border-stone-200 sticky top-0 z-40" style="box-shadow:0 1px 8px rgba(100,70,40,0.07)">
-  <div class="max-w-[1400px] mx-auto px-6 py-3 flex items-center justify-between gap-3">
+  <div class="max-w-[1500px] mx-auto px-6 py-3 flex items-center justify-between gap-3">
     <div class="flex items-center gap-3">
       <img src="https://ik.imagekit.io/itssaturday/its-saturday-logo-300-100-1.png?updatedAt=1753622395304" alt="It's Saturday! Logo" class="h-8 object-contain">
       <h1 class="text-sm font-bold text-stone-800">It's Saturday! 工具總管</h1>
-      <span class="version-badge">2026.11 v3</span>
+      <span class="version-badge">2026.11 v7</span>
     </div>
-    <div id="save-status" class="text-xs text-stone-400 flex items-center gap-2">
+    <div class="text-xs text-stone-400 flex items-center gap-2">
       <span class="w-2 h-2 rounded-full bg-emerald-400 inline-block"></span><span>草稿會自動保存在這台電腦</span>
     </div>
   </div>
-  <div class="max-w-[1400px] mx-auto px-6 pt-1 flex gap-4">
+  <div class="max-w-[1500px] mx-auto px-6 pt-1 flex gap-4">
     <button onclick="switchTab('generator')" id="tab-btn-generator">✨ HTML 產生器</button>
     <button onclick="switchTab('fixer')" id="tab-btn-fixer">🔧 舊程式碼修復</button>
   </div>
 </header>
 
 <!-- ============ Tab 1：產生器 ============ -->
-<div id="tab-generator" class="max-w-[1400px] mx-auto px-6 py-5">
-  <details class="panel-card mb-5 p-4 group">
+<div id="tab-generator" class="max-w-[1500px] mx-auto px-6 py-5">
+  <details id="import-panel" class="panel-card mb-5 p-4">
     <summary class="cursor-pointer select-none flex items-center gap-2 text-sm font-semibold text-stone-700">
-      📥 匯入官網現有 HTML 來修改 <span class="text-[11px] font-normal text-stone-400">（點開；支援標題、內文、列點、圖片，舊版含 &lt;center&gt; 的也可以）</span>
+      📥 匯入官網現有 HTML 來修改 <span class="text-[11px] font-normal text-stone-400">（點開；支援標題、內文、粗體、列點、圖片，舊版含 &lt;center&gt; 的也可以）</span>
     </summary>
     <div class="flex gap-3 mt-3">
       <textarea id="import-code" class="flex-1 bg-stone-50 border border-stone-200 text-[11px] font-mono p-2.5 rounded-lg h-24 resize-y field-focus text-stone-600"
@@ -72,7 +95,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helve
     </div>
   </details>
 
-  <div class="grid gap-5 items-start grid-cols-1 lg:grid-cols-[400px_1fr_1fr]">
+  <div class="grid gap-5 items-start grid-cols-1 lg:grid-cols-[380px_minmax(0,1.15fr)_minmax(0,1fr)]">
     <!-- 編輯欄 -->
     <div class="panel-card p-5 flex flex-col gap-3">
       <div class="flex items-center justify-between">
@@ -99,14 +122,28 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helve
 
     <!-- 預覽 -->
     <div class="panel-card p-5 lg-sticky">
-      <div class="flex items-center justify-between mb-3">
+      <div class="flex items-center justify-between mb-3 gap-2 flex-wrap">
         <h2 class="text-sm font-bold text-stone-700">👀 官網畫面模擬</h2>
-        <span class="text-[10px] text-stone-400 bg-stone-100 px-2 py-0.5 rounded-full">點預覽可跳到該段編輯</span>
+        <div id="device-seg" class="flex gap-0.5 bg-stone-100 p-0.5 rounded-lg"></div>
       </div>
-      <div class="preview-bg rounded-xl border border-stone-200 overflow-y-auto flex justify-center" style="max-height:calc(100vh - 180px);min-height:300px">
-        <!-- 刻意靠左：模擬 BVSHOP 預設，確保置中來自每段自己的 text-align -->
-        <div id="preview-area" class="w-full max-w-[500px]" style="text-align:left;padding:24px 12px;color:#333;font-size:14px;line-height:1.7"></div>
+      <div id="preview-scroll" class="relative rounded-xl bg-stone-100 overflow-y-auto" style="max-height:calc(100vh - 250px);min-height:320px;padding:16px">
+        <div id="device-frame"><iframe id="preview-frame" title="官網預覽" style="border:0;display:block;transform-origin:0 0;"></iframe></div>
       </div>
+      <div id="preview-meta" class="text-[10px] text-stone-400 mt-2 text-center"></div>
+
+      <details class="mt-3">
+        <summary class="cursor-pointer select-none text-[11px] font-semibold text-stone-500">⚙️ 預覽設定：官網 CSS、上方公告文字</summary>
+        <textarea id="site-css-input" class="mt-2 w-full h-40 bg-stone-50 border border-stone-200 text-[10px] font-mono p-2 rounded-lg field-focus text-stone-600" spellcheck="false"></textarea>
+        <div class="flex items-center gap-2 mt-1.5">
+          <button onclick="applySiteCss()" class="btn-brand text-[11px] font-semibold px-3 py-1 rounded-md">套用到預覽</button>
+          <button onclick="resetSiteCss()" class="text-[11px] text-stone-400 hover:text-stone-700">還原預設</button>
+        </div>
+        <div class="mt-3 flex items-center gap-2">
+          <span class="text-[11px] text-stone-500 shrink-0">上方公告文字</span>
+          <input id="ann-input" oninput="setAnnounce(this.value)" class="flex-1 min-w-0 border border-stone-200 rounded-md text-[11px] px-2 py-1 field-focus">
+        </div>
+        <p class="text-[10px] text-stone-400 mt-1.5 leading-relaxed">註：Adobe Font（Collier）通常只授權給官網網域使用，所以這裡的英文字可能以思源黑體代替；字級、行高、字距、粗細、寬度都會照官網規則呈現。</p>
+      </details>
     </div>
 
     <!-- 代碼 -->
@@ -125,7 +162,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helve
 </div>
 
 <!-- ============ Tab 2：修復工具 ============ -->
-<div id="tab-fixer" class="max-w-[1400px] mx-auto px-6 py-5 hidden">
+<div id="tab-fixer" class="max-w-[1500px] mx-auto px-6 py-5 hidden">
   <div class="panel-card p-6 flex flex-col gap-5">
     <div>
       <h2 class="text-base font-bold text-stone-800 mb-1">✨ 一鍵清理舊程式碼</h2>
@@ -180,27 +217,405 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helve
   </div>
 </div>
 
+<!-- 官網 CSS（預設值，與官網後台一致） -->
+<script type="text/plain" id="default-site-css">
+/* ==========================================================================
+   0. 引入 Adobe Font：Collier（替換為全新細緻專案 uzq8cud）
+   ========================================================================== */
+@import url('https://use.typekit.net/uzq8cud.css');
+
+/* ==========================================================================
+   1. 全站字體與基礎優化
+   ========================================================================== */
+body,
+button,
+input,
+select,
+textarea {
+  /* 英文使用 Collier，中文維持思源黑體 */
+  font-family: "collier", "Noto Sans TC", sans-serif !important;
+  font-weight: 300; /* 一般文字套用 Collier Light (300)，維持空靈輕盈 */
+}
+
+/* 🔥 關鍵：中文恢復正版 700 粗體，並用 font-synthesis: none 禁止瀏覽器對英文 Collier 造假塗黑 */
+/* 🔥 關鍵：拉高權重並恢復 700 粗體，讓中文正常加粗、英文維持 Collier Book 基底 */
+strong,
+b,
+body strong,
+body b,
+div strong,
+div b,
+p strong,
+p b,
+[data-bv] strong,
+[data-bv] b,
+h1, h2, h3, h4,
+.font-bold,
+[class*="font-bold"],
+[style*="font-weight: bold"],
+[style*="font-weight:bold"],
+[style*="font-weight: 700"],
+[style*="font-weight:700"] {
+  font-family: "collier", "Noto Sans TC", sans-serif !important;
+  font-weight: 700 !important;
+}
+
+/* 平台基礎 div 溫和微調 */
+div {
+  font-size: 14px;
+  line-height: 1.6;
+  letter-spacing: 0.05em;
+}
+
+/* 列表字距行高優化 */
+li {
+  line-height: 1.8 !important;
+  letter-spacing: 0.08em !important;
+}
+
+/* ==========================================================================
+   2. 標題與內文層級重新定義（智慧放行版：編輯器有自訂字級時不強制覆蓋）
+   ========================================================================== */
+h1:not([style*="font-size"]) {
+  font-size: 20px !important;
+  font-weight: 400 !important;
+  line-height: 1.5 !important;
+  letter-spacing: 0.05em !important;
+  margin-bottom: 12px !important;
+}
+
+h2:not([style*="font-size"]) {
+  font-size: 16px !important;
+  font-weight: 500 !important;
+  line-height: 1.5 !important;
+  letter-spacing: 0.08em !important;
+  margin-bottom: 10px !important;
+}
+
+h3:not([style*="font-size"]) {
+  font-size: 15px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.08em !important;
+  line-height: 1.5 !important;
+  margin-bottom: 8px !important;
+}
+
+h4:not([style*="font-size"]) {
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  line-height: 1.5 !important;
+  letter-spacing: 0.05em !important;
+}
+
+/* 內文 p：沒設定時強制 13.5px 散文詩排版；編輯器有自訂字級時自動退讓 */
+p:not([style*="font-size"]) {
+  font-size: 13.5px !important;
+  font-weight: 400 !important;
+  line-height: 2.2 !important;
+  letter-spacing: 0.06em !important;
+}
+
+/* 版型的標題（如公益系列、特色區塊標題） */
+p.heading:not([style*="font-size"]),
+.heading:not([style*="font-size"]) {
+  font-size: 20px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.08em !important;
+}
+/* ==========================================================================
+        3. 商品內頁專屬優化
+========================================================================== */
+
+/* 聯名商品大標題增加行高與下留白 */
+.product-form h1,
+.product-detail-name,
+[class*="product-name"] {
+  line-height: 1.6 !important;
+  letter-spacing: 0.08em !important;
+  margin-top: 8px !important; /* 🔥 新增這行：強制縮小品名上方的留白，讓它往上提 */
+  margin-bottom: 16px !important;
+}
+
+/* 特價與會員價區塊 */
+p.special_price,
+p.productInfoSpecialPrice,
+.product-price,
+.productInfoSpecialPrice {
+  font-size: 18px !important;
+  font-weight: 400 !important;
+  letter-spacing: 0.05em !important;
+  line-height: 1.6 !important;
+  color: #caa379 !important; /* 溫柔的品牌特價金色 */
+  margin-right: 12px !important; /* 靠右拉開 12px 呼吸間距給原價 */
+  display: inline-block !important; /* 強制行內並排 */
+  float: none !important; /* 預防被平台其他 float 干擾 */
+  vertical-align: middle !important; /* 上下齊頭對齊 */
+}
+
+/* 原價 */
+.productInfoSpecialPrice ~ span.price.line-through {
+  font-size: 15px; /* 縮小成精緻小字 */
+  font-weight: 400;
+  color: #aeaeae; /* 柔和灰色 */
+  vertical-align: middle; /* 上下齊頭對齊 */
+  margin-top: 15px; /* 維持水平對齊高度 */
+}
+/* ==========================================================================
+   4. 商品表單隱藏分隔線（適應 BVshop 新版 hr 類別）
+   ========================================================================== */
+hr.bg-gray-200,
+hr[class*="bg-gray"],
+hr[class*="my-"],
+.product-form hr,
+hr.h-px {
+  display: none !important;
+  height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
+
+.product-form .mb-10 {
+  margin-bottom: 0 !important;
+}
+
+/* ==========================================================================
+   5. 商品規格選項區塊與按鈕優化（終極權重覆蓋版）
+   ========================================================================== */
+
+/* 規格大組別容器：維持呼吸留白與齊頭對齊 */
+div.buttonDisplay,
+.buttonDisplay {
+  margin-bottom: 20px !important;
+  gap: 12px 10px !important;
+  padding-left: 0 !important;
+}
+
+.buttonDisplay .text-base,
+.buttonDisplay > div:first-child {
+  margin-bottom: 14px !important;
+  letter-spacing: 0.05em !important;
+}
+
+/* 🔥 核心關鍵：提高權重，強制以 1px 搭配柔和淡燕麥灰取代黑框 */
+div.buttonDisplay button[class*="getClick"],
+div.buttonDisplay button,
+.buttonDisplay button[class*="getClick"],
+.buttonDisplay button {
+  box-sizing: border-box !important;
+  border: 1px solid #ded9d2 !important;       /* 標準 1px + 柔和淺米灰 */
+  border-color: #ded9d2 !important;          /* 強制覆蓋被 Tailwind 鎖死的深色 border-color */
+  border-width: 1px !important;
+  border-style: solid !important;
+  box-shadow: none !important;               /* 清除外框陰影 */
+  outline: none !important;
+  border-radius: 4px !important;             /* 4px 微圓角 */
+  font-size: 13px !important;
+  padding: 8px 16px !important;
+  background-color: #ffffff !important;
+  color: #564c43 !important;
+  line-height: 1.5 !important;
+  margin: 0 !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: auto !important;
+  max-width: 100% !important;
+  letter-spacing: 0.05em !important;
+}
+
+/* 按鈕滑過效果（微調為略深一階的柔和線條） */
+div.buttonDisplay button[class*="getClick"]:hover,
+div.buttonDisplay button:hover {
+  background-color: #faf9f8 !important;
+  border-color: #b0a89f !important;
+}
+
+/* 按鈕選中狀態（維持品牌深泥褐，文字轉白） */
+div.buttonDisplay button[class*="getClick"].isChosen,
+div.buttonDisplay button.isChosen,
+div.buttonDisplay button[class*="isChosen"] {
+  background-color: #564c43 !important;
+  color: #ffffff !important;
+  border-color: #564c43 !important;
+}
+
+/* ==========================================================================
+        6. 商品簡介描述區塊（.productInfoHashtag）精緻化敘事排版
+========================================================================== */
+[data-bv="product-hashtag"],
+[data-bv="product-hashtag"] div,
+[data-bv="product-hashtag"] p,
+[data-bv="product-hashtag"] li {
+  line-height: 2.1 !important; /* 大行高，營造放鬆的閱讀感 */
+  letter-spacing: 0.06em !important;
+  color: #4a4a4a !important; /* 僅在此區塊強制柔和深灰，凸顯文案質感 */
+}
+
+/* 如果自訂描述裡面有標題，同步微調維持比例 */
+[data-bv="product-hashtag"] h1,
+[data-bv="product-hashtag"] h2,
+[data-bv="product-hashtag"] h3 {
+  font-size: 15px !important;
+  margin-top: 24px !important;
+  margin-bottom: 12px !important;
+  color: #333333 !important;
+}
+
+/* ==========================================================================
+        7. 摺疊面板區塊（Accordion）獨立優化：解除全站 h2 綁架
+========================================================================== */
+
+/* 精準點名住在摺疊外殼裡的 h2，強制縮小、變細、拔除下邊距 */
+[data-bv="accordion-root"] summary.accordion-header h2,
+[data-bv="accordion-root"] summary.accordion-header .heading,
+[data-bv="accordion-root"] h2[id^="heading"] {
+  font-size: 14px !important; /* 縮小成跟內文差不多、極具質感的 14px */
+  font-weight: 400 !important; /* 恢復纖細的字體，不要粗體，更有大牌感 */
+  letter-spacing: 0.05em !important; /* 微寬字距 */
+  line-height: 1.4 !important;
+  margin-bottom: 0 !important; /* 🔥 關鍵：拔掉原本 h2 的 10px 下邊距！ */
+  /* 這樣文字跟右邊的箭頭 (>) 才會完美水平置中對齊 */
+}
+/* ==========================================================================
+   8. 商品列表（卡片）價格層級與順序修正
+   ========================================================================== */
+
+/* 🔥 列表卡片：特價（主要售價）放大、居前、拔除超高行高 */
+p.productBoxPrice,
+.productBoxPrice {
+  font-size: 16px !important;        /* 放大為主角字級 */
+  font-weight: 400 !important;       /* 微粗體，清晰大器 */
+  color: #caa379 !important;         /* 溫柔品牌金色 */
+  line-height: 1.2 !important;       /* 拔除全站 p 的 2.2 誇張行高 */
+  margin: 0 !important;
+  order: 1 !important;               /* 🔥 關鍵：強制排在第 1 順位（左邊） */
+  display: inline-block !important;
+  width: auto !important;            /* 拔除行佔滿，允許並排 */
+  vertical-align: baseline !important;
+}
+
+/* 🔥 列表卡片：原價（劃線特價）縮小、變淡灰、靠後並排 */
+span.productBoxOriginalPrice,
+.productBoxOriginalPrice {
+  font-size: 15px !important;        /* 縮小為精緻副角小字 */
+  font-weight: 400 !important;       /* 恢復纖細筆畫，不再粗笨發脹 */
+  color: #aeaeae !important;         /* 柔和灰色，覆蓋平台的死黑 #000 */
+  line-height: 1.2 !important;
+  margin: 0 0 0 6px !important;      /* 左側推開 6px，與特價維持舒服呼吸間距 */
+  text-decoration: line-through !important;
+  order: 2 !important;               /* 🔥 關鍵：強制排在第 2 順位（右邊） */
+  display: inline-block !important;
+  width: auto !important;            /* 🔥 關鍵：拔除 w-full，不再強制換行！ */
+  vertical-align: baseline !important;
+}
+
+/* ==========================================================================
+   9. 客製化備註欄位醒目度與高度優化
+   ========================================================================== */
+
+/* 整個客製化區塊外殼：增加上下留白與呼吸感 */
+div.productInfoCustomize,
+.productInfoCustomize {
+  margin-top: 18px !important;
+  margin-bottom: 24px !important;
+}
+
+/* 提示標題：加深顏色與微調字重，讓客人一眼看見指引 */
+.productInfoCustomize label {
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  color: #3b3b39 !important;
+  margin-bottom: 10px !important;
+  line-height: 1.6 !important;
+  letter-spacing: 0.05em !important;
+}
+
+/* 🔥 核心關鍵：將輸入框拉高兩倍（48px -> 96px）、白底、清晰邊框 */
+.productInfoCustomize input,
+input[id*="customize"] {
+  height: 96px !important;                      /* 原本 48px，強制拉高至兩倍的 96px */
+  min-height: 96px !important;
+  box-sizing: border-box !important;
+  background-color: #ffffff !important;         /* 擺脫原本暗灰底色，改為醒目的純白 */
+  border: 1.2px solid #ded9d2 !important;       /* 搭配品牌柔和細邊框，取代死板預設框 */
+  border-radius: 6px !important;
+  padding: 14px 16px !important;
+  font-size: 14px !important;
+  color: #333333 !important;
+  letter-spacing: 0.05em !important;
+  outline: none !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03) !important;
+  transition: all 0.2s ease !important;
+}
+
+/* 點擊輸入框（Focus）時：亮起溫柔金色細框，提示正在輸入 */
+.productInfoCustomize input:focus,
+input[id*="customize"]:focus {
+  border-color: #caa379 !important;
+  box-shadow: 0 0 0 2px rgba(202, 163, 121, 0.15) !important;
+}
+
+/* 預設提示文字（Placeholder）清晰度微調 */
+.productInfoCustomize input::placeholder,
+input[id*="customize"]::placeholder {
+  color: #9c948a !important;                    /* 溫潤淺褐灰，清晰又保有美感 */
+  font-size: 13px !important;
+}
+
+/* ------------------------
+        手機版圖文顛倒
+------------------------ */
+@media screen and (max-width: 768px) {
+  #reverse-on-mobile {
+    display: flex;
+    flex-direction: column-reverse !important;
+  }
+  #reverse-on-mobile > [data-bv="layout-container"] {
+    flex-basis: auto !important;
+  }
+}
+</script>
+
 <script>
 'use strict';
 
 // ═══════════════ 設定 ═══════════════
 const C_H3 = '#caa379', C_STAR = '#caa379', C_H4 = '#926b59';
 const ALIGN = 'text-align: center;';
-// 列點：display: table + margin auto → 整塊置中、寬度只包住內容；text-align: left → 每點靠左對齊
+// 列點：display: table + margin auto → 整塊置中；text-align: left → 每點靠左
 const LIST_STYLE = { ul: 'display: table; margin: 0 auto; padding-left: 1.5em; text-align: left; list-style-type: disc;',
                      ol: 'display: table; margin: 0 auto; padding-left: 1.5em; text-align: left; list-style-type: decimal;' };
 const SWATCHES = ['#aa846a','#887f6b','#313421','#c89e81','#a09c88','#ebaf9b','#c1e6ee','#f5bc82','#f09637'];
 const STORE_KEY = 'its-saturday-bvshop-v3';
+const CSS_KEY = 'its-saturday-site-css-v2';
+const DEVICE_KEY = 'its-saturday-device-v2';
+const ANN_KEY = 'its-saturday-announce';
+const DEFAULT_ANN = '單筆滿 $1500 免運 🚚 單筆消費 $2500 贈點火器';
+
+// 預覽尺寸：手機版尺寸與上下 bar 高度依官網實機截圖量測（公告 bar 44、選單 74、立即選購 56）
+const BAR_TOP = 118, BAR_BOTTOM = 56;
+const DEVICES = {
+    s: { w: 393, h: 852, label: '📱 393',      name: 'iPhone 16',     phone: true },
+    p: { w: 402, h: 874, label: '402 Pro',     name: 'iPhone Pro',    phone: true },
+    x: { w: 440, h: 956, label: '440 Max',     name: 'iPhone Pro Max', phone: true },
+    d: { w: 800,         label: '💻 電腦',      name: '電腦版商品描述', phone: false },
+};
+let device = 'p', previewScale = 1;
 
 const TYPES = {
-    h3_gold:  { label:'大標 h3 · 金色',  ph:'請輸入大標題文字…', color:false },
-    h4_brown: { label:'標題 h4',         ph:'請輸入標題文字…',   color:true },
-    p_system: { label:'內文 p',          ph:'請輸入內文段落…（Enter 換行）', color:true },
-    ul:       { label:'• 列點清單',      ph:'一行一點，例如：\n前調：佛手柑\n中調：玫瑰\n後調：雪松', color:true },
-    ol:       { label:'1. 編號清單',     ph:'一行一點，會自動編號', color:true },
-    img:      { label:'🖼 圖片',          ph:'請貼上完整的圖片網址（https://…）', color:false },
-    star:     { label:'✦ 分隔符號',      ph:'', color:false, locked:'✦' },
-    br:       { label:'↕ 空行間距',      ph:'🔒 空行間距', color:false, locked:'' },
+    h3_gold:  { label:'大標 h3 · 金色',  ph:'請輸入大標題文字…', color:false, bold:true },
+    h4_brown: { label:'標題 h4',         ph:'請輸入標題文字…',   color:true,  bold:true },
+    p_system: { label:'內文 p',          ph:'請輸入內文段落…（Enter 換行）', color:true, bold:true },
+    ul:       { label:'• 列點清單',      ph:'一行一點，例如：\n前調：佛手柑\n中調：玫瑰\n後調：雪松', color:true, bold:true },
+    ol:       { label:'1. 編號清單',     ph:'一行一點，會自動編號', color:true, bold:true },
+    img:      { label:'🖼 圖片',          ph:'請貼上完整的圖片網址（https://…）', color:false, bold:false },
+    star:     { label:'✦ 分隔符號',      ph:'', color:false, bold:false, locked:'✦' },
+    br:       { label:'↕ 空行間距',      ph:'🔒 空行間距', color:false, bold:false, locked:'' },
 };
 
 const DEFAULT_LAYOUT = [
@@ -218,9 +633,26 @@ let rowCount = 0, activePickerId = null, pendingImport = null, activeHl = null;
 // ═══════════════ 小工具 ═══════════════
 function toast(msg, bg) {
     const t = document.createElement('div');
-    t.className = 'fixed bottom-6 right-6 z-50 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-lg';
+    t.className = 'toast fixed bottom-6 right-6 z-50 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-lg';
     t.style.background = bg || '#047857'; t.textContent = msg;
-    document.body.appendChild(t); setTimeout(() => t.remove(), 2600);
+    document.body.appendChild(t);
+    setTimeout(() => { t.classList.add('out'); setTimeout(() => t.remove(), 260); }, 2400);
+}
+// 重新觸發一次進場動畫
+function replayAnim(el, cls) { el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); }
+// FLIP：讓排序變動平滑滑動
+function flip(container, mutate) {
+    const kids = [...container.children], before = new Map(kids.map(k => [k, k.getBoundingClientRect().top]));
+    mutate();
+    kids.forEach(k => {
+        if (!k.isConnected || !before.has(k)) return;
+        const dy = before.get(k) - k.getBoundingClientRect().top; if (!dy) return;
+        k.style.transition = 'none'; k.style.transform = `translateY(${dy}px)`;
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+            k.style.transition = 'transform .3s cubic-bezier(.2,.8,.2,1)'; k.style.transform = '';
+            setTimeout(() => { k.style.transition = ''; }, 320);
+        }));
+    });
 }
 function copyText(text) {
     if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(text).catch(() => legacyCopy(text));
@@ -241,7 +673,25 @@ function toHex(c) {
 }
 const isValidHex = c => /^#[0-9a-fA-F]{6}$/.test(c);
 const escAttr = s => String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+const lsGet = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
+const lsDel = k => { try { localStorage.removeItem(k); } catch (e) {} };
 function autoGrow(ta) { ta.style.height = 'auto'; ta.style.height = Math.max(44, ta.scrollHeight + 2) + 'px'; }
+
+// 判斷元素是否「整段都是粗體」（匯入用）
+function fullyBold(el) {
+    const all = el.textContent.replace(/[\s ]/g, ''); if (!all) return false;
+    const tops = [...el.querySelectorAll('strong, b')].filter(s => { const p = s.parentElement.closest('strong, b'); return !p || !el.contains(p); });
+    return tops.map(s => s.textContent.replace(/[\s ]/g, '')).join('').length === all.length;
+}
+const stripBold = s => s.replace(/<\/?(strong|b)(\s[^>]*)?>/gi, '').trim();
+// 舊草稿裡的 **文字** 轉成新的整段粗體設定
+function migrateRow(r) {
+    if (r.bold !== undefined || !r.text || !r.text.includes('**')) return r;
+    const lines = r.text.split('\n').filter(l => l.trim());
+    const bold = lines.length > 0 && lines.every(l => /^\s*\*\*[\s\S]*\*\*\s*$/.test(l));
+    return { ...r, text: r.text.replace(/\*\*/g, ''), bold };
+}
 
 // ═══════════════ 頁籤 ═══════════════
 const TAB_ON  = 'px-4 py-2.5 text-[13px] font-bold text-amber-700 border-b-2 border-amber-700';
@@ -252,6 +702,8 @@ function switchTab(name) {
     document.getElementById('tab-fixer').classList.toggle('hidden', g);
     document.getElementById('tab-btn-generator').className = g ? TAB_ON : TAB_OFF;
     document.getElementById('tab-btn-fixer').className = g ? TAB_OFF : TAB_ON;
+    replayAnim(document.getElementById(g ? 'tab-generator' : 'tab-fixer'), 'tab-enter');
+    if (g) layoutPreview();
 }
 
 // ═══════════════ 修復工具 ═══════════════
@@ -264,7 +716,6 @@ function setStyleProp(el, prop, value, force) {
 }
 function centerBlock(el) {
     if (el.tagName === 'UL' || el.tagName === 'OL') {
-        // 列點：整塊置中、文字靠左（覆寫原本的置中）
         const keep = (el.getAttribute('style') || '').replace(/(^|;)\s*(text-align|display|margin[a-z-]*|padding-left|list-style-type)\s*:[^;]*;?/gi, '$1').replace(/^[;\s]+/, '').trim();
         el.setAttribute('style', (LIST_STYLE[el.tagName.toLowerCase()] + ' ' + keep).trim());
         el.querySelectorAll('li[style]').forEach(li => {
@@ -275,7 +726,6 @@ function centerBlock(el) {
     }
     setStyleProp(el, 'text-align', 'center', false);
 }
-
 function runCodeFixer() {
     const input = document.getElementById('fixer-input').value;
     if (!input.trim()) { alert('請先在左側貼上需要修復的程式碼！'); return; }
@@ -293,8 +743,6 @@ function runCodeFixer() {
         const a = el.getAttribute('align').toLowerCase(); el.removeAttribute('align');
         setStyleProp(el, 'text-align', a, false); r.align++;
     });
-
-    // 拆 <center>
     let list;
     while ((list = root.querySelectorAll('center')).length) {
         const c = list[list.length - 1];
@@ -311,14 +759,11 @@ function runCodeFixer() {
         });
         flush(); c.replaceWith(frag); r.center++;
     }
-
-    // 被編輯器「全選置中」過的列點：ul/ol 或 li 上有 text-align:center → 改成整塊置中、文字靠左
     root.querySelectorAll('ul, ol').forEach(l => {
         const centered = /text-align\s*:\s*center/i.test(l.getAttribute('style') || '') ||
                          [...l.querySelectorAll('li')].some(li => /text-align\s*:\s*center/i.test(li.getAttribute('style') || ''));
         if (centered) { centerBlock(l); r.list++; }
     });
-
     const holder = document.createElement('div'); holder.appendChild(root);
     let out = holder.innerHTML;
     out = out.replace(/>\s*(<(?:p|h[1-6]|div|img|ul|ol|li)[\s>])/gi, '>\n$1')
@@ -326,7 +771,6 @@ function runCodeFixer() {
              .replace(/<br\s*\/?>\s*/gi, '<br />\n')
              .replace(/(<p[^>]*>)\n/gi, '$1')
              .replace(/\n{3,}/g, '\n\n').trim();
-
     document.getElementById('fixer-output').value = out;
     document.getElementById('fixer-report').innerHTML =
         `移除翻譯殘留 ${r.gtx}　修正 -webkit-center ${r.webkit}<br>拆除 &lt;center&gt; ${r.center}　轉換 align ${r.align}<br>修正置中列點 ${r.list}`;
@@ -342,6 +786,189 @@ function sendFixedToGenerator() {
     switchTab('generator'); importHTML();
 }
 
+// ═══════════════ 官網預覽（iframe，套用官網 CSS，與工具介面隔離） ═══════════════
+const pdoc = () => document.getElementById('preview-frame').contentDocument;
+
+function initPreview() {
+    const frame = document.getElementById('preview-frame');
+    const d = frame.contentDocument;
+    d.open();
+    d.write(`<!DOCTYPE html><html lang="zh-TW"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Cormorant+Garamond:wght@500&display=swap">
+<style id="site-css"></style>
+<style>
+html,body{margin:0;background:#fff;color:#3b3b39;}
+html{scrollbar-width:none;} ::-webkit-scrollbar{display:none;}
+img{max-width:100%;}
+body.phone{padding:${BAR_TOP + 16}px 16px ${BAR_BOTTOM + 40}px;}
+body.desk{padding:20px 0 40px;}
+body.desk #site-top, body.desk #site-bottom{display:none;}
+#site-top{position:fixed;top:0;left:0;right:0;z-index:50;pointer-events:none;}
+#site-top .ann{height:44px;background:#3a2a11;color:#fff;display:flex;align-items:center;justify-content:center;font-size:14.5px;font-weight:500;letter-spacing:.04em;line-height:1;white-space:nowrap;position:relative;padding:0 34px;}
+#site-top .ann .x{position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:16px;font-weight:300;}
+#site-top .hdr{height:74px;background:#fbf9f5;display:flex;align-items:center;padding:0 12px 0 14px;}
+#site-top .logo{font-family:"Cormorant Garamond",Georgia,serif !important;font-size:25px;font-weight:500;color:#a69177;letter-spacing:0;margin-left:22px;line-height:1;}
+#site-top .sp{flex:1;}
+#site-top svg{width:24px;height:24px;stroke:#a29898;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;display:block;}
+#site-top .ic{margin-left:24px;position:relative;}
+#site-top .badge{position:absolute;top:-8px;right:-9px;width:17px;height:17px;border-radius:50%;background:#a29898;color:#fff;font-size:10.5px;line-height:17px;text-align:center;font-family:Georgia,serif !important;letter-spacing:0;}
+#site-bottom{position:fixed;left:0;right:0;bottom:0;height:56px;background:#c19f84;color:#fff;display:flex;align-items:center;justify-content:center;font-size:19px;font-weight:500;letter-spacing:.14em;line-height:1;z-index:50;pointer-events:none;}
+[data-pi]{cursor:pointer;border-radius:6px;transition:background .2s,outline-color .2s;outline:2px solid transparent;outline-offset:3px;}
+@keyframes piIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.pi-new{animation:piIn .4s cubic-bezier(.2,.8,.2,1);}
+@media (prefers-reduced-motion: reduce){.pi-new{animation:none}}
+[data-pi]:hover{background:rgba(202,163,121,.07);}
+.preview-highlight{outline-color:#caa379;background:#fffbf6 !important;position:relative;}
+.preview-highlight::before{content:'✏️ 正在編輯';position:absolute;top:-19px;left:50%;transform:translateX(-50%);background:#caa379;color:#fff;font:700 10px/1 -apple-system,sans-serif;padding:3px 9px;border-radius:20px;white-space:nowrap;z-index:5;letter-spacing:0;animation:piIn .2s ease;}
+.img-err{color:#c2410c;font-size:12px;padding:10px;text-align:center;border:1px dashed #fdba74;border-radius:6px;}
+.empty{color:#aaa;font-size:12px;text-align:center;padding:40px 0;}
+</style></head><body>
+<div id="site-top">
+  <div class="ann"><span id="ann-text"></span><span class="x">✕</span></div>
+  <div class="hdr">
+    <svg viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+    <span class="logo">It\u2019s Saturday!</span><span class="sp"></span>
+    <span class="ic"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7.5"/><path d="M16.5 16.5L21 21"/></svg></span>
+    <span class="ic"><svg viewBox="0 0 24 24"><path d="M2.5 3.5h2.6l2.4 11.2h11.2l2.2-8H6.2"/><circle cx="9.5" cy="19.5" r="1.2"/><circle cx="17" cy="19.5" r="1.2"/></svg><span class="badge">0</span></span>
+    <span class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4.2"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg></span>
+  </div>
+</div>
+<div id="content"></div>
+<div id="site-bottom">立即選購</div>
+</body></html>`);
+    d.close();
+
+    d.getElementById('site-css').textContent = getSiteCss();
+    d.getElementById('ann-text').textContent = lsGet(ANN_KEY) || DEFAULT_ANN;
+
+    // 點預覽 → 跳到對應的編輯框
+    d.addEventListener('click', e => {
+        if (e.target.closest('a')) e.preventDefault();
+        const pi = e.target.closest('[data-pi]'); if (!pi) return;
+        const row = document.querySelector(`#row-container [data-index="${pi.dataset.pi}"]`); if (!row) return;
+        row.scrollIntoView({ block:'center', behavior:'smooth' });
+        const ta = row.querySelector('.text-input');
+        if (!ta.disabled) ta.focus(); else { row.style.borderColor = '#caa379'; setTimeout(() => row.style.borderColor = '', 900); }
+    });
+    // 圖片讀取失敗提示 / 圖片載入後重新計算高度
+    d.addEventListener('error', e => {
+        if (e.target.tagName === 'IMG') {
+            const w = d.createElement('div'); w.className = 'img-err'; w.textContent = '⚠️ 圖片網址讀不到，請確認網址';
+            e.target.replaceWith(w); layoutPreview();
+        }
+    }, true);
+    d.addEventListener('load', () => layoutPreview(), true);
+    if (d.fonts && d.fonts.ready) d.fonts.ready.then(() => { layoutPreview(); checkCollier(); });
+    [1500, 4000, 8000].forEach(t => setTimeout(checkCollier, t));
+    const RO = frame.contentWindow.ResizeObserver;
+    if (RO) new RO(() => layoutPreview()).observe(d.body);
+
+    // 裝置切換按鈕
+    document.getElementById('device-seg').innerHTML = Object.entries(DEVICES)
+        .map(([k, v]) => `<button class="seg" data-dev="${k}" onclick="setDevice('${k}')">${v.label}</button>`).join('');
+    const saved = lsGet(DEVICE_KEY); if (saved && DEVICES[saved]) device = saved;
+    setDevice(device, true);
+    window.addEventListener('resize', layoutPreview);
+}
+
+function setDevice(k, silent) {
+    if (!silent && k !== device) {   // 切換寬度：淡出 → 換尺寸 → 淡入
+        const df = document.getElementById('device-frame');
+        df.style.opacity = '0';
+        document.querySelectorAll('#device-seg .seg').forEach(b => b.classList.toggle('on', b.dataset.dev === k));
+        setTimeout(() => { setDevice(k, true); layoutPreview(); df.style.opacity = '1'; }, 160);
+        return;
+    }
+    device = k; lsSet(DEVICE_KEY, k);
+    document.querySelectorAll('#device-seg .seg').forEach(b => b.classList.toggle('on', b.dataset.dev === k));
+    document.getElementById('device-frame').classList.toggle('phone', DEVICES[k].phone);
+    const d = pdoc(); if (d && d.body) { d.body.classList.toggle('phone', DEVICES[k].phone); d.body.classList.toggle('desk', !DEVICES[k].phone); }
+    // 手機：固定高度的手機畫面（內容在裡面捲動）；電腦：依內容長高
+    document.getElementById('preview-scroll').style.height = DEVICES[k].phone ? 'calc(100vh - 250px)' : '';
+    if (!silent) layoutPreview();
+}
+
+function layoutPreview() {
+    const frame = document.getElementById('preview-frame'), d = frame.contentDocument;
+    if (!d || !d.body) return;
+    const dev = DEVICES[device], scroll = document.getElementById('preview-scroll');
+    const border = 2;
+    const avail = scroll.clientWidth - 32 - border;
+    if (avail <= 0) return;   // 頁籤隱藏中
+    let h;
+    frame.style.width = dev.w + 'px';
+    if (dev.phone) {
+        h = dev.h;   // 整支手機畫面縮放到看得完整
+        previewScale = Math.min(1, avail / dev.w, (scroll.clientHeight - 32 - border) / dev.h);
+    } else {
+        previewScale = Math.min(1, avail / dev.w);
+        frame.style.height = '10px';                           // 先縮小再量，才量得到真正內容高度
+        h = Math.max(280, d.body.scrollHeight);
+    }
+    frame.style.height = h + 'px';
+    frame.style.transform = `scale(${previewScale})`;
+    const df = document.getElementById('device-frame');
+    df.style.width = (dev.w * previewScale + border) + 'px';
+    df.style.height = (h * previewScale + border) + 'px';
+    document.getElementById('preview-meta').innerHTML =
+        `${dev.name} ${dev.w}${dev.h ? '×' + dev.h : ''}px${previewScale < 1 ? `（縮放 ${Math.round(previewScale * 100)}% 顯示）` : ''} · 已套用官網 CSS · ${dev.phone ? '在畫面上滾動可捲動 · ' : ''}點段落可跳到編輯<br>${fontStatus}`;
+}
+
+// 檢查 Adobe Font（Collier）在預覽裡有沒有真的載入
+let fontStatus = '英文字體 Collier：檢查中…';
+function checkCollier() {
+    const d = pdoc(); if (!d || !d.fonts) return;
+    const faces = [...d.fonts].filter(f => f.family.replace(/["']/g, '').trim().toLowerCase() === 'collier');
+    const prev = fontStatus;
+    if (faces.some(f => f.status === 'loaded'))
+        fontStatus = '<span style="color:#047857">英文字體 Collier：✅ 已載入，預覽字體與官網一致</span>';
+    else if (!faces.length || faces.every(f => f.status === 'error'))
+        fontStatus = '<span style="color:#b45309">英文字體 Collier：未載入，英文暫以替代字體顯示（官網上不受影響）</span>';
+    else
+        fontStatus = '英文字體 Collier：載入中…';
+    if (prev !== fontStatus) layoutPreview();
+}
+
+function setAnnounce(v) {
+    lsSet(ANN_KEY, v); const el = pdoc().getElementById('ann-text'); if (el) el.textContent = v || DEFAULT_ANN;
+}
+function getSiteCss() { return lsGet(CSS_KEY) || document.getElementById('default-site-css').textContent.trim(); }
+function applySiteCss() {
+    const v = document.getElementById('site-css-input').value;
+    lsSet(CSS_KEY, v); pdoc().getElementById('site-css').textContent = v;
+    setTimeout(layoutPreview, 50); toast('已套用新的官網 CSS 到預覽', '#7a5c44');
+}
+function resetSiteCss() {
+    lsDel(CSS_KEY);
+    const v = document.getElementById('default-site-css').textContent.trim();
+    document.getElementById('site-css-input').value = v; pdoc().getElementById('site-css').textContent = v;
+    setTimeout(layoutPreview, 50);
+}
+
+function hlPreview(k) {
+    activeHl = String(k);
+    const el = pdoc().getElementById('pi-' + k); if (!el) return;
+    el.classList.add('preview-highlight');
+    if (DEVICES[device].phone) {   // 手機：在手機畫面裡捲動，避開上下固定 bar
+        const win = document.getElementById('preview-frame').contentWindow, r = el.getBoundingClientRect();
+        const safeTop = BAR_TOP + 24, safeBottom = DEVICES[device].h - BAR_BOTTOM - 16;
+        if (r.top < safeTop || r.bottom > safeBottom)
+            win.scrollTo({ top: Math.max(0, win.scrollY + r.top - safeTop - 20), behavior: 'smooth' });
+        return;
+    }
+    // 電腦：讓外層捲動到該段
+    const scroll = document.getElementById('preview-scroll'), df = document.getElementById('device-frame');
+    const top = df.offsetTop + el.getBoundingClientRect().top * previewScale;
+    const bottom = top + el.offsetHeight * previewScale;
+    if (top < scroll.scrollTop + 10 || bottom > scroll.scrollTop + scroll.clientHeight - 10)
+        scroll.scrollTo({ top: Math.max(0, top - 40), behavior: 'smooth' });
+}
+function unhlPreview(k) {
+    if (activeHl === String(k)) activeHl = null;
+    const el = pdoc().getElementById('pi-' + k); if (el) el.classList.remove('preview-highlight');
+}
+
 // ═══════════════ 初始化 ═══════════════
 function init() {
     switchTab('generator');
@@ -350,8 +977,11 @@ function init() {
         <div class="w-8 h-8 rounded-full shadow-sm" style="background:${c}"></div>
         <span class="text-[9px] font-mono text-stone-400">${c}</span>
       </button>`).join('');
+    document.getElementById('site-css-input').value = getSiteCss();
+    document.getElementById('ann-input').value = lsGet(ANN_KEY) || DEFAULT_ANN;
+    initPreview();
     const saved = loadDraft();
-    (saved && saved.length ? saved : DEFAULT_LAYOUT).forEach(r => addRow(r.type, r.text, r.color));
+    (saved && saved.length ? saved.map(migrateRow) : DEFAULT_LAYOUT).forEach((r, i) => addRow(r.type, r.text, r.color, null, r.bold, i * 35));
     renderOutput();
     if (saved && saved.length) toast('已還原上次的草稿', '#7a5c44');
 }
@@ -361,20 +991,18 @@ function collectRows() {
     return [...document.getElementById('row-container').children].map(row => ({
         type: row.querySelector('.type-select').value,
         text: row.querySelector('.text-input').value,
-        color: row.querySelector('.color-toggle').checked ? row.querySelector('.color-val').value : ''
+        color: row.querySelector('.color-toggle').checked ? row.querySelector('.color-val').value : '',
+        bold: row.dataset.bold === '1'
     }));
 }
 let saveTimer = null;
-function saveDraft() {
-    clearTimeout(saveTimer);
-    saveTimer = setTimeout(() => { try { localStorage.setItem(STORE_KEY, JSON.stringify(collectRows())); } catch (e) {} }, 400);
-}
-function loadDraft() { try { return JSON.parse(localStorage.getItem(STORE_KEY) || 'null'); } catch (e) { return null; } }
+function saveDraft() { clearTimeout(saveTimer); saveTimer = setTimeout(() => lsSet(STORE_KEY, JSON.stringify(collectRows())), 400); }
+function loadDraft() { try { return JSON.parse(lsGet(STORE_KEY) || 'null'); } catch (e) { return null; } }
 function resetAll() {
     if (!confirm('確定要清空目前所有段落，回到範本嗎？')) return;
-    try { localStorage.removeItem(STORE_KEY); } catch (e) {}
+    lsDel(STORE_KEY);
     document.getElementById('row-container').innerHTML = ''; rowCount = 0;
-    DEFAULT_LAYOUT.forEach(r => addRow(r.type, r.text, ''));
+    DEFAULT_LAYOUT.forEach((r, i) => addRow(r.type, r.text, '', null, false, i * 35));
     renderOutput();
 }
 
@@ -387,7 +1015,7 @@ function quickAdd(type) {
     const ta = row.querySelector('.text-input'); if (!ta.disabled) ta.focus();
 }
 
-function addRow(type, text, color, afterId) {
+function addRow(type, text, color, afterId, bold, delay) {
     type = TYPES[type] ? type : 'p_system'; text = text || ''; color = toHex(color || '');
     rowCount++; const idx = rowCount; const rowId = 'row-' + idx;
     const rawText = text.replace(/<br\s*\/?>\s*\n?/gi, '\n').replace(/</g, '&lt;');
@@ -395,11 +1023,12 @@ function addRow(type, text, color, afterId) {
     const resolved = isValidHex(color) ? color : C_H4;
     const opts = Object.entries(TYPES).map(([k, v]) => `<option value="${k}" ${k === type ? 'selected' : ''}>${v.label}</option>`).join('');
 
-    const html = `<div id="${rowId}" data-index="${idx}" draggable="false" class="draggable-row row-card flex flex-col gap-2 p-3">
+    const html = `<div id="${rowId}" data-index="${idx}" data-bold="${bold ? '1' : ''}" draggable="false" class="draggable-row row-card row-enter flex flex-col gap-2 p-3" style="animation-delay:${delay || 0}ms">
   <div class="flex items-center gap-1.5">
     <div class="row-num">${idx}</div>
     <span class="drag-handle text-stone-300 cursor-grab select-none text-sm hover:text-stone-500" title="拖曳排序">⠿</span>
     <select onchange="onTypeChange('${rowId}')" class="type-select bg-white border border-stone-200 text-[11px] rounded-lg px-2 py-1 font-medium text-stone-700 field-focus min-w-0 flex-1">${opts}</select>
+    <button class="bold-btn shrink-0 ${bold ? 'on' : ''}" onclick="toggleRowBold('${rowId}')" title="整段粗體 開／關（Ctrl/⌘ + B）">B</button>
     <div class="color-picker-wrap items-center gap-1 bg-white border border-stone-200 rounded-lg px-1.5 py-0.5 shrink-0" title="文字顏色">
       <input type="checkbox" class="color-toggle hidden" ${colorOn ? 'checked' : ''}>
       <button onclick="openColorPicker(this,'${rowId}')" class="color-trigger flex items-center gap-1 text-[11px] text-stone-500 cursor-pointer">🎨<span class="color-swatch w-3.5 h-3.5 rounded-full border border-stone-300 inline-block pointer-events-none"></span></button>
@@ -412,7 +1041,7 @@ function addRow(type, text, color, afterId) {
       <button onclick="delRow('${rowId}')" class="text-stone-300 hover:text-red-500 px-1 text-sm" title="刪除">✕</button>
     </div>
   </div>
-  <textarea oninput="autoGrow(this); renderOutput()" onfocus="hlPreview(${idx})" onblur="unhlPreview(${idx})"
+  <textarea oninput="autoGrow(this); renderOutput()" onfocus="hlPreview(${idx})" onblur="unhlPreview(${idx})" onkeydown="onTextKey(event,'${rowId}')"
     class="text-input w-full bg-white border border-stone-200 text-xs rounded-lg p-2.5 text-stone-700 field-focus resize-none leading-relaxed" rows="1">${rawText}</textarea>
   <div class="row-hint text-[10px] text-stone-400 hidden"></div>
 </div>`;
@@ -420,7 +1049,31 @@ function addRow(type, text, color, afterId) {
     if (afterId) document.getElementById(afterId).insertAdjacentHTML('afterend', html);
     else c.insertAdjacentHTML('beforeend', html);
     applyTypeUI(rowId); setupDrag();
+    const el = document.getElementById(rowId);
+    el.addEventListener('animationend', () => { el.classList.remove('row-enter'); el.style.animationDelay = ''; }, { once: true });
     return rowId;
+}
+
+function onTextKey(e, rowId) {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') {
+        e.preventDefault();
+        toggleRowBold(rowId);
+    }
+}
+
+// 整段粗體開關：文字框直接變粗，輸出時整段包 <strong>
+function toggleRowBold(rowId) {
+    const row = document.getElementById(rowId);
+    if (!TYPES[row.querySelector('.type-select').value].bold) return;
+    row.dataset.bold = row.dataset.bold === '1' ? '' : '1';
+    applyBoldUI(row); renderOutput();
+}
+function applyBoldUI(row) {
+    const T = TYPES[row.querySelector('.type-select').value];
+    const on = !!T.bold && row.dataset.bold === '1';
+    const btn = row.querySelector('.bold-btn');
+    btn.classList.toggle('on', on); btn.setAttribute('aria-pressed', on);
+    row.querySelector('.text-input').classList.toggle('is-bold', on);
 }
 
 function onTypeChange(rowId) { applyTypeUI(rowId); renderOutput(); }
@@ -434,28 +1087,43 @@ function applyTypeUI(rowId) {
     if ('locked' in T) { ta.value = T.locked; ta.disabled = true; ta.classList.add('bg-stone-100'); }
     ta.placeholder = T.ph;
     cp.style.display = T.color ? 'flex' : 'none';
+    row.querySelector('.bold-btn').style.display = T.bold ? '' : 'none';
+    applyBoldUI(row);
     updateSwatch(row);
-    if (type === 'ul' || type === 'ol') { hint.textContent = '一行 = 一點。整塊會置中，每點文字靠左對齊。'; hint.classList.remove('hidden'); }
-    else hint.classList.add('hidden');
+    const hints = {
+        h4_brown: '預設 500 字重；按 B 改成粗體。',
+        ul: '一行 = 一點。整塊置中、每點靠左。按 B 整組變粗體。',
+        ol: '一行 = 一點，自動編號。整塊置中、每點靠左。按 B 整組變粗體。',
+    };
+    if (hints[type]) { hint.textContent = hints[type]; hint.classList.remove('hidden'); } else hint.classList.add('hidden');
     autoGrow(ta);
 }
 function updateSwatch(row) {
     const on = row.querySelector('.color-toggle').checked;
-    const type = row.querySelector('.type-select').value;
-    const def = type === 'h4_brown' ? C_H4 : '#333333';
+    const def = row.querySelector('.type-select').value === 'h4_brown' ? C_H4 : '#333333';
     row.querySelector('.color-swatch').style.background = on ? row.querySelector('.color-val').value : def;
 }
-function delRow(id) { document.getElementById(id).remove(); renderOutput(); }
+function delRow(id) {
+    const r = document.getElementById(id); if (!r || r.classList.contains('row-leave')) return;
+    r.style.maxHeight = r.offsetHeight + 'px';
+    requestAnimationFrame(() => {
+        r.classList.add('row-leave');
+        Object.assign(r.style, { maxHeight: '0px', paddingTop: '0px', paddingBottom: '0px', marginTop: '-10px', borderWidth: '0px' });
+    });
+    setTimeout(() => { r.remove(); renderOutput(); }, 300);
+}
 function moveRow(id, dir) {
     const c = document.getElementById('row-container'), r = document.getElementById(id);
-    if (dir === -1 && r.previousElementSibling) c.insertBefore(r, r.previousElementSibling);
-    if (dir === 1 && r.nextElementSibling) c.insertBefore(r.nextElementSibling, r);
+    flip(c, () => {
+        if (dir === -1 && r.previousElementSibling) c.insertBefore(r, r.previousElementSibling);
+        if (dir === 1 && r.nextElementSibling) c.insertBefore(r.nextElementSibling, r);
+    });
     renderOutput();
 }
 function dupRow(id) {
     const r = document.getElementById(id);
     addRow(r.querySelector('.type-select').value, r.querySelector('.text-input').value,
-           r.querySelector('.color-toggle').checked ? r.querySelector('.color-val').value : '', id);
+           r.querySelector('.color-toggle').checked ? r.querySelector('.color-val').value : '', id, r.dataset.bold === '1');
     renderOutput();
 }
 function renumberRows() {
@@ -468,7 +1136,7 @@ function openColorPicker(trig, id) {
     const pop = document.getElementById('color-popover'), r = trig.getBoundingClientRect();
     pop.style.top = `${r.bottom + window.scrollY + 6}px`;
     pop.style.left = `${Math.max(8, Math.min(window.innerWidth - 230, r.left + window.scrollX - 80))}px`;
-    pop.classList.remove('hidden');
+    pop.classList.remove('hidden'); replayAnim(pop, 'pop-in');
     pickColor(document.getElementById(id).querySelector('.color-val').value);
 }
 function pickColor(hex) {
@@ -499,24 +1167,6 @@ document.addEventListener('mousedown', e => {
 });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') { closePicker(); cancelImport(); } });
 
-// ═══════════════ 預覽聯動 ═══════════════
-function hlPreview(k) {
-    activeHl = String(k); const el = document.getElementById('pi-' + k);
-    if (el) { el.classList.add('preview-highlight'); el.scrollIntoView({ block:'nearest', behavior:'smooth' }); }
-}
-function unhlPreview(k) {
-    if (activeHl === String(k)) activeHl = null;
-    const el = document.getElementById('pi-' + k); if (el) el.classList.remove('preview-highlight');
-}
-// 點預覽 → 跳到對應的編輯框
-document.addEventListener('click', e => {
-    const pi = e.target.closest('#preview-area [id^="pi-"]'); if (!pi) return;
-    const row = document.querySelector(`#row-container [data-index="${pi.id.slice(3)}"]`); if (!row) return;
-    row.scrollIntoView({ block:'center', behavior:'smooth' });
-    const ta = row.querySelector('.text-input');
-    if (!ta.disabled) ta.focus(); else { row.style.borderColor = '#caa379'; setTimeout(() => row.style.borderColor = '', 900); }
-});
-
 // ═══════════════ 拖曳 ═══════════════
 function setupDrag() {
     const c = document.getElementById('row-container');
@@ -539,7 +1189,7 @@ function setupDrag() {
 
 function highlightCode(src) {
     let t = src.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-    return t.replace(/(&lt;\/?)(div|p|h3|h4|img|br|strong|span|em|a|ul|ol|li)\b([\s\S]*?)(\/?&gt;)/g, (_, o, tag, body, cl) => {
+    return t.replace(/(&lt;\/?)(div|p|h3|h4|img|br|strong|b|span|em|a|ul|ol|li)\b([\s\S]*?)(\/?&gt;)/g, (_, o, tag, body, cl) => {
         const pb = body.replace(/([a-zA-Z\-]+)=(&quot;.*?&quot;)/g, (__, k, v) =>
             `<span class="hl-attr">${k}</span><span class="hl-symbol">=</span><span class="hl-val">${v.replace(/(#[a-fA-F0-9]{3,8})\b/g, '<span class="hl-color">$1</span>')}</span>`);
         return `<span class="hl-symbol">${o}</span><span class="hl-tag">${tag}</span>${pb}<span class="hl-symbol">${cl}</span>`;
@@ -547,8 +1197,10 @@ function highlightCode(src) {
 }
 
 // ═══════════════ 核心輸出 ═══════════════
+let seenPreview = null;   // 第一次渲染不播動畫；之後只有「新出現」的段落淡入
 function renderOutput() {
     let html = '', prev = '';
+    const shown = new Set();
     for (const row of document.getElementById('row-container').children) {
         const idx = row.getAttribute('data-index');
         const type = row.querySelector('.type-select').value;
@@ -557,50 +1209,44 @@ function renderOutput() {
         const col = row.querySelector('.color-val').value;
         const color = type === 'h4_brown' ? (chk ? col : C_H4) : (TYPES[type].color && chk ? col : '');
         const colorCss = color ? ` color: ${color};` : '';
-        const ft = text.replace(/\n/g, '<br />\n');
-        let lh = '', lp = '';
+        const bold = !!TYPES[type].bold && row.dataset.bold === '1';
+        const B = s => bold ? `<strong>${s}</strong>` : s;
+        const ft = B(text.replace(/\n/g, '<br />\n'));
+        let lh = '';
 
         switch (type) {
-            case 'star':
-                lh = `<h3 style="${ALIGN} color: ${C_STAR};">✦</h3>`;
-                lp = `<h3 style="text-align:center;color:${C_STAR};font-weight:bold;font-size:1.17em;margin:0;">✦</h3>`; break;
-            case 'br':
-                lh = `<p style="${ALIGN}">&nbsp;</p>`;
-                lp = `<p style="text-align:center;margin:0;padding:6px 0;">&nbsp;</p>`; break;
-            case 'img': {
-                if (!text) break; const src = escAttr(text);
-                lh = `<p style="${ALIGN}"><img src="${src}" width="800" style="max-width: 100%; height: auto; display: block; margin: 0 auto;" /></p>`;
-                lp = `<p style="text-align:center;margin:0;"><img src="${src}" width="800" style="max-width:100%;height:auto;display:block;margin:0 auto;" onerror="this.replaceWith(Object.assign(document.createElement('div'),{textContent:'⚠️ 圖片網址讀不到',style:'color:#c2410c;font-size:12px;padding:8px'}))" /></p>`; break;
-            }
-            case 'h3_gold':
-                if (!text) break;
-                lh = `<h3 style="${ALIGN} color: ${C_H3};">${ft}</h3>`;
-                lp = `<h3 style="text-align:center;color:${C_H3};font-weight:bold;font-size:1.17em;margin:0;padding:8px 0;">${ft}</h3>`; break;
-            case 'h4_brown':
-                if (!text) break;
-                lh = `<h4 style="${ALIGN}${colorCss}"><strong>${ft}</strong></h4>`;
-                lp = `<h4 style="text-align:center;margin:0;padding:6px 0;color:${color};font-size:1em;"><strong>${ft}</strong></h4>`; break;
-            case 'p_system':
-                if (!text) break;
-                lh = `<p style="${ALIGN}${colorCss}">${ft}</p>`;
-                lp = `<p style="text-align:center;margin:0;padding:6px 0;color:${color || '#333'};">${ft}</p>`; break;
+            case 'star':     lh = `<h3 style="${ALIGN} color: ${C_STAR};">✦</h3>`; break;
+            case 'br':       lh = `<p style="${ALIGN}">&nbsp;</p>`; break;
+            case 'img':      if (text) lh = `<p style="${ALIGN}"><img src="${escAttr(text)}" width="800" style="max-width: 100%; height: auto; display: block; margin: 0 auto;" /></p>`; break;
+            case 'h3_gold':  if (text) lh = `<h3 style="${ALIGN} color: ${C_H3};">${ft}</h3>`; break;
+            case 'h4_brown': if (text) lh = `<h4 style="${ALIGN}${colorCss}">${ft}</h4>`; break;
+            case 'p_system': if (text) lh = `<p style="${ALIGN}${colorCss}">${ft}</p>`; break;
             case 'ul': case 'ol': {
-                const items = text.split('\n').map(s => s.trim().replace(/^([•・\-*]|\d+[.、)])\s*/, '')).filter(Boolean);
-                if (!items.length) break;
-                const lis = items.map(s => `<li>${s}</li>`).join('\n');
-                lh = `<${type} style="${LIST_STYLE[type]}${colorCss}">\n${lis}\n</${type}>`;
-                lp = `<${type} style="${LIST_STYLE[type]}${colorCss || ' color: #333;'} padding-top:6px; padding-bottom:6px;">${items.map(s => `<li>${s}</li>`).join('')}</${type}>`; break;
+                // 去掉使用者自己打的 • - 1. 等符號（但保留 **粗體** 的星號）
+                const items = text.split('\n').map(s => s.trim().replace(/^([•・\-]|\*(?!\*)|\d+[.、)])\s*/, '')).filter(Boolean);
+                if (items.length) lh = `<${type} style="${LIST_STYLE[type]}${colorCss}">\n${items.map(s => `<li>${B(s)}</li>`).join('\n')}\n</${type}>`;
+                break;
             }
         }
-        if (lh) html += lh + '\n';
-        if (lp) prev += `<div id="pi-${idx}" class="w-full relative cursor-pointer">${lp}</div>`;
+        if (lh) {
+            html += lh + '\n';
+            const isNew = seenPreview && !seenPreview.has(idx);
+            prev += `<div id="pi-${idx}" data-pi="${idx}"${isNew ? ' class="pi-new"' : ''}>${lh}</div>`;
+            shown.add(idx);
+        }
     }
     html = html.trim();
     document.getElementById('code-plain').value = html;
     document.getElementById('code-highlighted').innerHTML = highlightCode(html);
-    document.getElementById('preview-area').innerHTML = prev || '<p style="text-align:center;color:#aaa;font-size:12px">（還沒有內容，從左下方新增段落）</p>';
+
+    const d = pdoc();
+    if (d && d.getElementById('content')) {
+        d.getElementById('content').innerHTML = prev || '<div class="empty">（還沒有內容，從左下方新增段落）</div>';
+        if (activeHl) { const el = d.getElementById('pi-' + activeHl); if (el) el.classList.add('preview-highlight'); }
+        layoutPreview();
+    }
+    seenPreview = shown;
     renumberRows();
-    if (activeHl) { const el = document.getElementById('pi-' + activeHl); if (el) el.classList.add('preview-highlight'); }
     saveDraft();
 }
 
@@ -608,8 +1254,8 @@ function copyCode() {
     const v = document.getElementById('code-plain').value, btn = document.getElementById('copy-btn');
     if (!v) { alert('目前沒有內容可以複製'); return; }
     copyText(v).then(() => {
-        btn.textContent = '✅ 已複製！'; btn.style.background = 'linear-gradient(135deg,#1a7a3a,#22a85a)';
-        setTimeout(() => { btn.textContent = '📋 複製 HTML'; btn.style.background = ''; }, 2000);
+        btn.textContent = '✅ 已複製！'; btn.style.background = 'linear-gradient(135deg,#1a7a3a,#22a85a)'; replayAnim(btn, 'anim-ok');
+        setTimeout(() => { btn.textContent = '📋 複製 HTML'; btn.style.background = ''; btn.classList.remove('anim-ok'); }, 2000);
     }).catch(() => alert('複製失敗，請直接在代碼區全選複製'));
 }
 
@@ -630,7 +1276,7 @@ function importHTML() {
                 continue;
             }
             if (tag === 'div' && ![...ch.children].some(c => /^(P|H\d|UL|OL|DIV|IMG|TABLE|CENTER)$/.test(c.tagName)) && ch.textContent.trim()) {
-                collected.push(ch); continue;   // 純文字的 div 當成內文
+                collected.push(ch); continue;
             }
             walk(ch);
         }
@@ -642,19 +1288,23 @@ function importHTML() {
         const color = toHex(n.style.color || '');
         const inner = n.innerHTML.trim();
         const txt = n.textContent.replace(/ /g, ' ').trim();
+        const fb = fullyBold(n);
+        const body = fb ? stripBold(inner) : inner;   // 整段粗體 → 開啟 B；部分粗體 → 保留原始碼
         if (tag === 'img') { const s = n.getAttribute('src'); if (s) { rows.push({ type:'img', text:s }); cnt.img++; } continue; }
         if (tag === 'ul' || tag === 'ol') {
-            const items = [...n.querySelectorAll(':scope > li')].map(li => li.innerHTML.replace(/<br\s*\/?>/gi, ' ').trim()).filter(Boolean);
-            if (items.length) { rows.push({ type: tag, text: items.join('\n'), color }); cnt.list++; }
+            const lis = [...n.querySelectorAll(':scope > li')];
+            const allBold = lis.length > 0 && lis.every(fullyBold);
+            const items = lis.map(li => { const s = li.innerHTML.replace(/<br\s*\/?>/gi, ' ').trim(); return allBold ? stripBold(s) : s; }).filter(Boolean);
+            if (items.length) { rows.push({ type: tag, text: items.join('\n'), color, bold: allBold }); cnt.list++; }
             continue;
         }
         if ((tag === 'p' || tag === 'div') && !txt) { rows.push({ type:'br', text:'' }); cnt.br++; continue; }
         if (tag === 'h3' && txt === '✦') { rows.push({ type:'star', text:'' }); cnt.star++; continue; }
-        if (/^h[1-3]$/.test(tag)) { rows.push({ type:'h3_gold', text: inner }); cnt.h3++; continue; }
+        if (/^h[1-3]$/.test(tag)) { rows.push({ type:'h3_gold', text: body, bold: fb }); cnt.h3++; continue; }
         if (/^h[4-6]$/.test(tag)) {
-            rows.push({ type:'h4_brown', text: inner.replace(/<\/?strong>/gi, '').trim(), color: color === C_H4 ? '' : color }); cnt.h4++; continue;
+            rows.push({ type:'h4_brown', text: body, bold: fb, color: color === C_H4 ? '' : color }); cnt.h4++; continue;
         }
-        rows.push({ type:'p_system', text: inner, color }); cnt.p++;
+        rows.push({ type:'p_system', text: body, color, bold: fb }); cnt.p++;
     }
     if (!rows.length) { alert('沒有偵測到可用的段落，請確認貼上的是 HTML 原始碼'); return; }
 
@@ -671,10 +1321,11 @@ function confirmImport() {
     if (!pendingImport) return;
     const rows = pendingImport; pendingImport = null;
     document.getElementById('row-container').innerHTML = ''; rowCount = 0; activeHl = null;
-    rows.forEach(r => addRow(r.type, r.text, r.color));
+    seenPreview = null;
+    rows.forEach((r, i) => addRow(r.type, r.text, r.color, null, r.bold, Math.min(i, 20) * 30));
     renderOutput();
     document.getElementById('import-code').value = '';
-    document.querySelector('details').open = false;
+    document.getElementById('import-panel').open = false;
     toast('🎉 已匯入，輸出已轉成新格式');
 }
 
